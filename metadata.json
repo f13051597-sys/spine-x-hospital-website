@@ -1,0 +1,6 @@
+{
+  "name": "Spine X Superspeciality Hospital & Trauma Centre",
+  "description": "Official hospital website and online OPD appointment booking system for Spine X Superspeciality Hospital and Trauma Centre Pvt. Ltd., Birtamode, Jhapa, Nepal.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

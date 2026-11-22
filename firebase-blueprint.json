@@ -1,0 +1,372 @@
+{
+  "entities": {
+    "Department": {
+      "title": "Department",
+      "description": "Hospital medical department available for care and OPD booking.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_-]+$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "summary": {
+          "type": "string",
+          "maxLength": 400
+        },
+        "careScope": {
+          "type": "string",
+          "maxLength": 400
+        },
+        "is24x7": {
+          "type": "boolean"
+        },
+        "isActive": {
+          "type": "boolean"
+        },
+        "sortOrder": {
+          "type": "number"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "name", "summary", "careScope", "is24x7", "isActive", "sortOrder", "updatedAt"]
+    },
+    "Doctor": {
+      "title": "Doctor",
+      "description": "Hospital doctor directory profile with OPD fee and configurable booking slots.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_-]+$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "specialty": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "departmentId": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_-]+$"
+        },
+        "opdFee": {
+          "type": "number"
+        },
+        "isAvailable": {
+          "type": "boolean"
+        },
+        "availableSlots": {
+          "type": "array",
+          "description": "Selectable OPD appointment slots managed by hospital administrators."
+        },
+        "sortOrder": {
+          "type": "number"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "name", "specialty", "departmentId", "opdFee", "isAvailable", "availableSlots", "sortOrder", "updatedAt"]
+    },
+    "BookedSlot": {
+      "title": "BookedSlot",
+      "description": "Non-PII atomic slot lock preventing duplicate bookings for the same doctor, date, and time slot.",
+      "type": "object",
+      "properties": {
+        "doctorId": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_-]+$"
+        },
+        "appointmentDate": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 10,
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        },
+        "timeSlot": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 20
+        },
+        "appointmentId": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_-]+$"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["doctorId", "appointmentDate", "timeSlot", "appointmentId", "status", "createdAt"]
+    },
+    "Appointment": {
+      "title": "Appointment",
+      "description": "Patient appointment booking record restricted exclusively to authorized hospital administrators.",
+      "type": "object",
+      "properties": {
+        "bookingId": {
+          "type": "string",
+          "minLength": 15,
+          "maxLength": 15,
+          "pattern": "^SXH-[0-9]{4}-[A-Z0-9]{6}$"
+        },
+        "patientName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "mobileNumber": {
+          "type": "string",
+          "minLength": 7,
+          "maxLength": 15,
+          "pattern": "^[0-9]{7,15}$"
+        },
+        "age": {
+          "type": "number"
+        },
+        "gender": {
+          "type": "string",
+          "enum": ["Male", "Female", "Other", "Prefer not to say", ""]
+        },
+        "departmentId": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_-]+$"
+        },
+        "departmentName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "doctorId": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_-]+$"
+        },
+        "doctorName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "opdFee": {
+          "type": "number"
+        },
+        "appointmentDate": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 10,
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        },
+        "timeSlot": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 20
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "approved", "rejected", "completed", "cancelled"]
+        },
+        "slotLockId": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_-]+$"
+        },
+        "statusLookupId": {
+          "type": "string",
+          "minLength": 64,
+          "maxLength": 64,
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "adminNote": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "bookingId",
+        "patientName",
+        "mobileNumber",
+        "age",
+        "gender",
+        "departmentId",
+        "departmentName",
+        "doctorId",
+        "doctorName",
+        "opdFee",
+        "appointmentDate",
+        "timeSlot",
+        "reason",
+        "status",
+        "slotLockId",
+        "statusLookupId",
+        "adminNote",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AppointmentStatus": {
+      "title": "AppointmentStatus",
+      "description": "SHA-256 keyed status summary requiring both exact booking ID and verified mobile number to read.",
+      "type": "object",
+      "properties": {
+        "bookingId": {
+          "type": "string",
+          "minLength": 15,
+          "maxLength": 15,
+          "pattern": "^SXH-[0-9]{4}-[A-Z0-9]{6}$"
+        },
+        "appointmentId": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_-]+$"
+        },
+        "patientInitials": {
+          "type": "string",
+          "maxLength": 10
+        },
+        "departmentName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "doctorName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "opdFee": {
+          "type": "number"
+        },
+        "appointmentDate": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 10,
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        },
+        "timeSlot": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 20
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "approved", "rejected", "completed", "cancelled"]
+        },
+        "adminNote": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "bookingId",
+        "appointmentId",
+        "patientInitials",
+        "departmentName",
+        "doctorName",
+        "opdFee",
+        "appointmentDate",
+        "timeSlot",
+        "status",
+        "adminNote",
+        "updatedAt"
+      ]
+    },
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Authorized hospital administrator account record.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 128
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "role": {
+          "type": "string",
+          "enum": ["admin"]
+        },
+        "addedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "email", "role", "addedAt"]
+    }
+  },
+  "firestore": {
+    "/departments/{departmentId}": {
+      "schema": { "$ref": "#/entities/Department" },
+      "description": "Hospital departments displayed publicly and editable by admins."
+    },
+    "/doctors/{doctorId}": {
+      "schema": { "$ref": "#/entities/Doctor" },
+      "description": "Doctor profiles with OPD fees and admin-managed availability slots."
+    },
+    "/bookedSlots/{slotLockId}": {
+      "schema": { "$ref": "#/entities/BookedSlot" },
+      "description": "Non-PII atomic lock documents preventing duplicate doctor/date/slot bookings."
+    },
+    "/appointments/{appointmentId}": {
+      "schema": { "$ref": "#/entities/Appointment" },
+      "description": "Patient appointment records containing PII, readable and manageable strictly by admins."
+    },
+    "/appointmentStatus/{lookupId}": {
+      "schema": { "$ref": "#/entities/AppointmentStatus" },
+      "description": "SHA-256 keyed public status lookup requiring exact booking ID and mobile number."
+    },
+    "/admins/{adminUid}": {
+      "schema": { "$ref": "#/entities/AdminUser" },
+      "description": "Authorized hospital administrators."
+    }
+  }
+}
