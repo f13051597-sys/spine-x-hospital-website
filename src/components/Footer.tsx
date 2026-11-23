@@ -60,6 +60,8 @@ export function Footer({ onNavigate, onToggleChat, isChatOpen }: FooterProps) {
                   { id: 'departments', label: 'Departments' },
                   { id: 'doctors', label: 'Doctor Directory' },
                   { id: 'book', label: 'Book OPD Appointment' },
+                  { id: 'pay', label: 'Online Payment (Fonepay QR)' },
+                  { id: 'dashboard', label: 'Patient Dashboard & Refunds' },
                   { id: 'status', label: 'Check Booking Status' },
                 ] as { id: HospitalView; label: string }[]
               ).map((item) => (

@@ -5,13 +5,20 @@ import {
   CheckCircle2,
   Clock,
   Copy,
+  ImagePlus,
+  LayoutDashboard,
   Loader2,
   MessageCircle,
   Printer,
+  QrCode,
+  X,
 } from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
-import { DEFAULT_OPD_SLOTS, HOSPITAL_INFO } from '../data/hospitalCatalog';
+import { onAuthStateChanged, type User } from 'firebase/auth';
+import { DEFAULT_OPD_SLOTS, FONEPAY_MERCHANT_INFO, HOSPITAL_INFO } from '../data/hospitalCatalog';
+import { auth } from '../lib/firebase';
 import {
+  checkTransactionIdAvailable,
   createAppointmentBooking,
   fetchBookedSlotsForDoctorDate,
   type BookingConfirmation,
@@ -20,9 +27,16 @@ import type {
   Department,
   Doctor,
   GenderOption,
+  PaymentMethod,
   ReminderChannel,
   ReminderTiming,
 } from '../types/hospital';
+import {
+  buildPaymentWhatsAppHref,
+  normalizeTransactionId,
+  processPaymentScreenshot,
+  saveLocalPatientRecordRef,
+} from '../utils/paymentUtils';
 import {
   buildWhatsAppReminderHref,
   downloadCalendarReminder,
@@ -37,6 +51,7 @@ interface BookingSectionProps {
   preselectedDoctorId?: string;
   preselectedDepartmentId?: string;
   onGoToStatusCheck: (bookingId: string, mobileNumber: string) => void;
+  onOpenDashboard?: () => void;
 }
 
 function getTodayDateString(): string {
@@ -53,12 +68,14 @@ export function BookingSection({
   preselectedDoctorId,
   preselectedDepartmentId,
   onGoToStatusCheck,
+  onOpenDashboard,
 }: BookingSectionProps) {
   const availableDoctors = useMemo(
     () => doctors.filter((d) => d.isAvailable),
     [doctors]
   );
 
+  const [signedInUser, setSignedInUser] = useState<User | null>(auth.currentUser);
   const [patientName, setPatientName] = useState('');
   const [mobileNumber, setMobileNumber] = useState('');
   const [age, setAge] = useState('');
@@ -77,6 +94,13 @@ export function BookingSection({
     'Calendar & Browser Alert'
   );
 
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('fonepay_qr');
+  const [transactionId, setTransactionId] = useState('');
+  const [txCheckStatus, setTxCheckStatus] = useState<'idle' | 'checking' | 'available' | 'duplicate'>('idle');
+  const [screenshotDataUrl, setScreenshotDataUrl] = useState('');
+  const [screenshotUrl, setScreenshotUrl] = useState('');
+  const [uploadingScreenshot, setUploadingScreenshot] = useState(false);
+
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -84,6 +108,10 @@ export function BookingSection({
   const [confirmation, setConfirmation] = useState<BookingConfirmation | null>(null);
   const [copiedId, setCopiedId] = useState(false);
   const [notifFeedback, setNotifFeedback] = useState<string | null>(null);
+
+  useEffect(() => {
+    return onAuthStateChanged(auth, (u) => setSignedInUser(u));
+  }, []);
 
   useEffect(() => {
     if (preselectedDepartmentId && departments.some((d) => d.id === preselectedDepartmentId)) {
@@ -159,6 +187,46 @@ export function BookingSection({
     }
   };
 
+  const canPayOnline = Boolean(selectedDoctor && Number(selectedDoctor.opdFee) >= 10);
+  const effectivePaymentMethod: PaymentMethod = canPayOnline ? paymentMethod : 'pay_at_desk';
+
+  const handleTransactionBlur = async () => {
+    const clean = normalizeTransactionId(transactionId);
+    if (!clean || clean.length < 4) {
+      setTxCheckStatus('idle');
+      return;
+    }
+    setTxCheckStatus('checking');
+    try {
+      const res = await checkTransactionIdAvailable(clean);
+      setTxCheckStatus(res.available ? 'available' : 'duplicate');
+    } catch {
+      setTxCheckStatus('idle');
+    }
+  };
+
+  const handleScreenshotChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setErrorMsg(null);
+    setUploadingScreenshot(true);
+    try {
+      const processed = await processPaymentScreenshot(
+        file,
+        `appt-${Date.now()}`,
+        signedInUser?.uid || ''
+      );
+      setScreenshotDataUrl(processed.screenshotDataUrl);
+      setScreenshotUrl(processed.screenshotUrl);
+    } catch (err) {
+      setErrorMsg(
+        err instanceof Error ? err.message : 'Could not process the selected payment screenshot.'
+      );
+    } finally {
+      setUploadingScreenshot(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
@@ -171,6 +239,16 @@ export function BookingSection({
     if (!timeSlot) {
       setErrorMsg('Please choose an available appointment time slot.');
       return;
+    }
+    if (effectivePaymentMethod === 'fonepay_qr') {
+      if (!transactionId.trim()) {
+        setErrorMsg('Please enter your Fonepay Transaction ID to complete online payment.');
+        return;
+      }
+      if (!screenshotDataUrl) {
+        setErrorMsg('Please upload your Fonepay payment screenshot to complete online payment.');
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -187,9 +265,44 @@ export function BookingSection({
         reason,
         reminderTiming,
         reminderChannel,
+        paymentMethod: effectivePaymentMethod,
+        transactionId: effectivePaymentMethod === 'fonepay_qr' ? transactionId : undefined,
+        screenshotDataUrl:
+          effectivePaymentMethod === 'fonepay_qr' ? screenshotDataUrl : undefined,
+        screenshotUrl: effectivePaymentMethod === 'fonepay_qr' ? screenshotUrl : undefined,
+        ownerUid: signedInUser?.uid || '',
       });
       setConfirmation(result);
       setBookedSlots((prev) => [...prev, timeSlot]);
+
+      saveLocalPatientRecordRef({
+        refId: result.bookingId,
+        kind: 'appointment',
+        bookingId: result.bookingId,
+        paymentRef: result.paymentRef,
+        mobileNumber: result.mobileNumber,
+        doctorName: result.doctorName,
+        appointmentDate: result.appointmentDate,
+        timeSlot: result.timeSlot,
+        amount: result.opdFee,
+        createdAtIso: new Date().toISOString(),
+      });
+
+      if (result.paymentRef) {
+        saveLocalPatientRecordRef({
+          refId: result.paymentRef,
+          kind: 'payment',
+          bookingId: result.bookingId,
+          paymentRef: result.paymentRef,
+          mobileNumber: result.mobileNumber,
+          doctorName: result.doctorName,
+          appointmentDate: result.appointmentDate,
+          timeSlot: result.timeSlot,
+          amount: result.opdFee,
+          createdAtIso: new Date().toISOString(),
+        });
+      }
+
       if (reminderTiming !== 'none') {
         saveLocalAppointmentReminder({
           bookingId: result.bookingId,
@@ -255,6 +368,10 @@ export function BookingSection({
     setGender('');
     setTimeSlot('');
     setReason('');
+    setTransactionId('');
+    setScreenshotDataUrl('');
+    setScreenshotUrl('');
+    setTxCheckStatus('idle');
     setErrorMsg(null);
     setNotifFeedback(null);
   };
@@ -402,14 +519,62 @@ export function BookingSection({
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-xs text-slate-500">OPD Fee (Pay at Hospital)</dt>
+                    <dt className="text-xs text-slate-500">
+                      {confirmation.paymentMethod === 'fonepay_qr'
+                        ? 'Online OPD Payment (Fonepay QR)'
+                        : 'OPD Fee (Pay at Hospital)'}
+                    </dt>
                     <dd className="font-mono tabular-nums font-semibold text-[#0F4C81] mt-0.5">
                       {confirmation.opdFee > 0
                         ? `NPR ${confirmation.opdFee}`
                         : 'Confirm at OPD Desk'}
                     </dd>
                   </div>
+                  {confirmation.paymentRef && (
+                    <>
+                      <div>
+                        <dt className="text-xs text-slate-500">Payment Reference</dt>
+                        <dd className="font-mono font-semibold text-slate-900 mt-0.5">
+                          {confirmation.paymentRef}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs text-slate-500">Transaction ID &amp; Status</dt>
+                        <dd className="text-xs font-medium text-amber-800 mt-0.5">
+                          <span className="font-mono text-slate-900 mr-1.5">
+                            {confirmation.transactionId}
+                          </span>
+                          · Pending Verification
+                        </dd>
+                      </div>
+                    </>
+                  )}
                 </dl>
+
+                {confirmation.paymentRef && (
+                  <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <p className="text-xs text-amber-950 leading-relaxed">
+                      Your Fonepay payment is currently <strong>Pending Verification</strong>. Your
+                      appointment will be approved automatically once our Accounts Desk or Fonepay
+                      verification confirms the transaction.
+                    </p>
+                    <a
+                      href={buildPaymentWhatsAppHref({
+                        paymentRef: confirmation.paymentRef,
+                        amount: confirmation.opdFee,
+                        transactionId: confirmation.transactionId || '',
+                        patientName: confirmation.patientName,
+                        bookingId: confirmation.bookingId,
+                      })}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-700 text-white text-xs font-medium hover:bg-emerald-800 shrink-0"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" aria-hidden="true" />
+                      <span>WhatsApp Receipt</span>
+                    </a>
+                  </div>
+                )}
 
                 {/* Appointment Reminder Controls */}
                 <div className="p-4 rounded-xl bg-sky-50/70 border border-sky-200 space-y-3">
@@ -459,7 +624,7 @@ export function BookingSection({
                       className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-700 text-white text-xs font-medium hover:bg-emerald-800"
                     >
                       <MessageCircle className="w-3.5 h-3.5" aria-hidden="true" />
-                      <span>WhatsApp Reminder</span>
+                      <span>WhatsApp Desk</span>
                     </a>
                   </div>
                   {notifFeedback && (
@@ -468,7 +633,8 @@ export function BookingSection({
                 </div>
 
                 <p className="text-xs text-slate-600 leading-relaxed pt-3 border-t border-slate-200">
-                  Save your Booking ID and mobile number to check approval updates anytime.
+                  Save your Booking ID and mobile number to check approval updates or manage payments
+                  and refunds in your Patient Dashboard.
                 </p>
 
                 <div className="flex flex-wrap gap-3">
@@ -481,6 +647,16 @@ export function BookingSection({
                   >
                     Check Appointment Status
                   </button>
+                  {onOpenDashboard && (
+                    <button
+                      type="button"
+                      onClick={onOpenDashboard}
+                      className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg border border-[#0F4C81] text-[#0F4C81] bg-white text-sm font-medium hover:bg-sky-50 cursor-pointer"
+                    >
+                      <LayoutDashboard className="w-4 h-4" aria-hidden="true" />
+                      <span>Open Patient Dashboard</span>
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={handleReset}
@@ -759,7 +935,7 @@ export function BookingSection({
                   </label>
                   <textarea
                     id="booking-reason"
-                    rows={3}
+                    rows={2}
                     maxLength={500}
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
@@ -768,13 +944,211 @@ export function BookingSection({
                   />
                 </div>
 
+                {/* Integrated Appointment Payment Section */}
+                {canPayOnline && selectedDoctor && (
+                  <div className="p-5 rounded-xl border border-slate-200 bg-slate-50 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <h3 className="font-display text-sm font-semibold text-slate-950">
+                          OPD Consultation Payment
+                        </h3>
+                        <p className="text-xs text-slate-600">
+                          Pay NPR {selectedDoctor.opdFee} now via official Fonepay QR or at the
+                          hospital OPD desk.
+                        </p>
+                      </div>
+                      <span className="font-mono text-sm font-bold text-[#0F4C81] shrink-0">
+                        Fee: NPR {selectedDoctor.opdFee}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('fonepay_qr')}
+                        className={`p-3 rounded-lg border text-left transition-colors cursor-pointer ${
+                          effectivePaymentMethod === 'fonepay_qr'
+                            ? 'bg-white border-[#0F4C81] ring-1 ring-[#0F4C81]'
+                            : 'bg-white/70 border-slate-300 hover:border-slate-400'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 text-xs font-semibold text-slate-900">
+                          <QrCode className="w-4 h-4 text-[#0F4C81]" aria-hidden="true" />
+                          <span>Pay Now via Fonepay QR</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-1">
+                          Upload receipt for verification &amp; fast approval
+                        </p>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('pay_at_desk')}
+                        className={`p-3 rounded-lg border text-left transition-colors cursor-pointer ${
+                          effectivePaymentMethod === 'pay_at_desk'
+                            ? 'bg-white border-[#0F4C81] ring-1 ring-[#0F4C81]'
+                            : 'bg-white/70 border-slate-300 hover:border-slate-400'
+                        }`}
+                      >
+                        <div className="text-xs font-semibold text-slate-900">
+                          Pay at Hospital OPD Desk
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-1">
+                          Pay NPR {selectedDoctor.opdFee} upon arrival at reception
+                        </p>
+                      </button>
+                    </div>
+
+                    {effectivePaymentMethod === 'fonepay_qr' && (
+                      <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-4">
+                        {/* Payment Context Summary */}
+                        <div className="p-3 rounded-lg bg-sky-50/70 border border-sky-200 grid grid-cols-2 gap-2 text-xs">
+                          <div>
+                            <span className="text-slate-500">Doctor:</span>{' '}
+                            <span className="font-semibold text-slate-900">
+                              {selectedDoctor.name}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-slate-500">Fee:</span>{' '}
+                            <span className="font-mono font-bold text-[#0F4C81]">
+                              NPR {selectedDoctor.opdFee}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-slate-500">Date &amp; Slot:</span>{' '}
+                            <span className="font-mono text-slate-900">
+                              {appointmentDate} · {timeSlot || 'Select slot above'}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-slate-500">Patient:</span>{' '}
+                            <span className="font-medium text-slate-900">
+                              {patientName.trim() || 'Pending name'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
+                          <div className="sm:col-span-5 flex flex-col items-center p-2 rounded-lg border border-slate-200 bg-slate-50">
+                            <img
+                              src={FONEPAY_MERCHANT_INFO.qrImageUrl}
+                              alt="Official Spine X Hospital Fonepay QR"
+                              className="w-full max-w-[190px] h-auto rounded object-contain"
+                            />
+                            <p className="text-[10px] font-mono text-slate-600 mt-1.5 text-center">
+                              Terminal: {FONEPAY_MERCHANT_INFO.terminalId}
+                            </p>
+                          </div>
+
+                          <div className="sm:col-span-7 space-y-3">
+                            <div>
+                              <label
+                                htmlFor="booking-tx-id"
+                                className="block text-xs font-semibold text-slate-800 mb-1"
+                              >
+                                Fonepay Transaction ID <span className="text-rose-600">*</span>
+                              </label>
+                              <input
+                                id="booking-tx-id"
+                                type="text"
+                                required
+                                minLength={4}
+                                maxLength={64}
+                                value={transactionId}
+                                onChange={(e) => {
+                                  setTransactionId(e.target.value.toUpperCase());
+                                  setTxCheckStatus('idle');
+                                }}
+                                onBlur={handleTransactionBlur}
+                                placeholder="e.g. FNP12345678"
+                                className="w-full px-3 py-2 text-xs sm:text-sm font-mono uppercase border border-slate-300 rounded-lg focus:outline-none focus:border-[#0F4C81]"
+                              />
+                              {txCheckStatus === 'available' && (
+                                <p className="text-[11px] text-emerald-700 mt-1">
+                                  Unique Transaction ID ready.
+                                </p>
+                              )}
+                              {txCheckStatus === 'duplicate' && (
+                                <p className="text-[11px] text-rose-700 font-medium mt-1">
+                                  Duplicate Transaction ID already submitted.
+                                </p>
+                              )}
+                            </div>
+
+                            <div className="space-y-1.5">
+                              <span className="block text-xs font-semibold text-slate-800">
+                                Payment Screenshot <span className="text-rose-600">*</span>
+                              </span>
+                              <div className="flex items-center gap-3">
+                                {screenshotDataUrl && (
+                                  <div className="relative w-14 h-14 rounded-lg overflow-hidden border border-slate-300 shrink-0">
+                                    <img
+                                      src={screenshotDataUrl}
+                                      alt="Receipt thumbnail"
+                                      className="w-full h-full object-cover"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setScreenshotDataUrl('');
+                                        setScreenshotUrl('');
+                                      }}
+                                      aria-label="Remove screenshot"
+                                      className="absolute top-0.5 right-0.5 p-0.5 rounded bg-slate-900/80 text-white cursor-pointer"
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                )}
+                                <label className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 bg-slate-50 text-xs font-medium text-slate-800 hover:bg-slate-100 cursor-pointer">
+                                  {uploadingScreenshot ? (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  ) : (
+                                    <ImagePlus className="w-3.5 h-3.5 text-[#0F4C81]" />
+                                  )}
+                                  <span>
+                                    {uploadingScreenshot
+                                      ? 'Uploading...'
+                                      : screenshotDataUrl
+                                        ? 'Change Screenshot'
+                                        : 'Upload Screenshot'}
+                                  </span>
+                                  <input
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/webp"
+                                    onChange={handleScreenshotChange}
+                                    className="sr-only"
+                                  />
+                                </label>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <button
                   type="submit"
-                  disabled={submitting || !selectedDoctor || availableDoctors.length === 0}
+                  disabled={
+                    submitting ||
+                    uploadingScreenshot ||
+                    !selectedDoctor ||
+                    availableDoctors.length === 0 ||
+                    (effectivePaymentMethod === 'fonepay_qr' && txCheckStatus === 'duplicate')
+                  }
                   className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg bg-[#0F4C81] text-white text-sm font-semibold hover:bg-[#0B3A63] disabled:bg-slate-300 transition-colors cursor-pointer disabled:cursor-not-allowed"
                 >
                   {submitting && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
-                  <span>{submitting ? 'Confirming Slot...' : 'Submit Appointment'}</span>
+                  <span>
+                    {submitting
+                      ? 'Submitting Appointment...'
+                      : effectivePaymentMethod === 'fonepay_qr'
+                        ? 'Submit Appointment & Payment'
+                        : 'Submit Appointment'}
+                  </span>
                 </button>
               </form>
             )}

@@ -5,42 +5,15 @@
       "description": "Hospital medical department available for care and OPD booking.",
       "type": "object",
       "properties": {
-        "id": {
-          "type": "string",
-          "minLength": 2,
-          "maxLength": 64,
-          "pattern": "^[a-zA-Z0-9_-]+$"
-        },
-        "name": {
-          "type": "string",
-          "minLength": 2,
-          "maxLength": 100
-        },
-        "nepaliName": {
-          "type": "string",
-          "maxLength": 120
-        },
-        "summary": {
-          "type": "string",
-          "maxLength": 400
-        },
-        "careScope": {
-          "type": "string",
-          "maxLength": 400
-        },
-        "is24x7": {
-          "type": "boolean"
-        },
-        "isActive": {
-          "type": "boolean"
-        },
-        "sortOrder": {
-          "type": "number"
-        },
-        "updatedAt": {
-          "type": "string",
-          "format": "date-time"
-        }
+        "id": { "type": "string", "minLength": 2, "maxLength": 64, "pattern": "^[a-zA-Z0-9_-]+$" },
+        "name": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "nepaliName": { "type": "string", "maxLength": 120 },
+        "summary": { "type": "string", "maxLength": 400 },
+        "careScope": { "type": "string", "maxLength": 400 },
+        "is24x7": { "type": "boolean" },
+        "isActive": { "type": "boolean" },
+        "sortOrder": { "type": "number" },
+        "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "name", "summary", "careScope", "is24x7", "isActive", "sortOrder", "updatedAt"]
     },
@@ -49,64 +22,20 @@
       "description": "Hospital doctor directory profile with photo, qualification, OPD fee, schedule, and booking slots.",
       "type": "object",
       "properties": {
-        "id": {
-          "type": "string",
-          "minLength": 2,
-          "maxLength": 64,
-          "pattern": "^[a-zA-Z0-9_-]+$"
-        },
-        "name": {
-          "type": "string",
-          "minLength": 2,
-          "maxLength": 100
-        },
-        "specialty": {
-          "type": "string",
-          "maxLength": 150
-        },
-        "qualification": {
-          "type": "string",
-          "maxLength": 350
-        },
-        "nmcNo": {
-          "type": "string",
-          "maxLength": 30
-        },
-        "opdSchedule": {
-          "type": "string",
-          "maxLength": 100
-        },
-        "photoUrl": {
-          "type": "string",
-          "maxLength": 150000
-        },
-        "clinicalFocus": {
-          "type": "string",
-          "maxLength": 500
-        },
-        "departmentId": {
-          "type": "string",
-          "minLength": 2,
-          "maxLength": 64,
-          "pattern": "^[a-zA-Z0-9_-]+$"
-        },
-        "opdFee": {
-          "type": "number"
-        },
-        "isAvailable": {
-          "type": "boolean"
-        },
-        "availableSlots": {
-          "type": "array",
-          "description": "Selectable OPD appointment slots managed by hospital administrators."
-        },
-        "sortOrder": {
-          "type": "number"
-        },
-        "updatedAt": {
-          "type": "string",
-          "format": "date-time"
-        }
+        "id": { "type": "string", "minLength": 2, "maxLength": 64, "pattern": "^[a-zA-Z0-9_-]+$" },
+        "name": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "specialty": { "type": "string", "maxLength": 150 },
+        "qualification": { "type": "string", "maxLength": 350 },
+        "nmcNo": { "type": "string", "maxLength": 30 },
+        "opdSchedule": { "type": "string", "maxLength": 100 },
+        "photoUrl": { "type": "string", "maxLength": 150000 },
+        "clinicalFocus": { "type": "string", "maxLength": 500 },
+        "departmentId": { "type": "string", "minLength": 2, "maxLength": 64, "pattern": "^[a-zA-Z0-9_-]+$" },
+        "opdFee": { "type": "number" },
+        "isAvailable": { "type": "boolean" },
+        "availableSlots": { "type": "array", "description": "Selectable OPD appointment slots managed by hospital administrators." },
+        "sortOrder": { "type": "number" },
+        "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "name", "specialty", "departmentId", "opdFee", "isAvailable", "availableSlots", "sortOrder", "updatedAt"]
     },
@@ -115,173 +44,54 @@
       "description": "Non-PII atomic slot lock preventing duplicate bookings for the same doctor, date, and time slot.",
       "type": "object",
       "properties": {
-        "doctorId": {
-          "type": "string",
-          "minLength": 2,
-          "maxLength": 64,
-          "pattern": "^[a-zA-Z0-9_-]+$"
-        },
-        "appointmentDate": {
-          "type": "string",
-          "minLength": 10,
-          "maxLength": 10,
-          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
-        },
-        "timeSlot": {
-          "type": "string",
-          "minLength": 3,
-          "maxLength": 20
-        },
-        "appointmentId": {
-          "type": "string",
-          "minLength": 2,
-          "maxLength": 64,
-          "pattern": "^[a-zA-Z0-9_-]+$"
-        },
-        "status": {
-          "type": "string",
-          "enum": ["active"]
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time"
-        }
+        "doctorId": { "type": "string", "minLength": 2, "maxLength": 64, "pattern": "^[a-zA-Z0-9_-]+$" },
+        "appointmentDate": { "type": "string", "minLength": 10, "maxLength": 10, "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+        "timeSlot": { "type": "string", "minLength": 3, "maxLength": 20 },
+        "appointmentId": { "type": "string", "minLength": 2, "maxLength": 64, "pattern": "^[a-zA-Z0-9_-]+$" },
+        "status": { "type": "string", "enum": ["active"] },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["doctorId", "appointmentDate", "timeSlot", "appointmentId", "status", "createdAt"]
     },
     "Appointment": {
       "title": "Appointment",
-      "description": "Patient appointment booking record restricted exclusively to authorized hospital administrators.",
+      "description": "Patient appointment booking record accessible strictly to authorized hospital administrators or the authenticated booking owner.",
       "type": "object",
       "properties": {
-        "bookingId": {
-          "type": "string",
-          "minLength": 15,
-          "maxLength": 15,
-          "pattern": "^SXH-[0-9]{4}-[A-Z0-9]{6}$"
-        },
-        "patientName": {
-          "type": "string",
-          "minLength": 2,
-          "maxLength": 100
-        },
-        "mobileNumber": {
-          "type": "string",
-          "minLength": 7,
-          "maxLength": 15,
-          "pattern": "^[0-9]{7,15}$"
-        },
-        "age": {
-          "type": "number"
-        },
-        "gender": {
-          "type": "string",
-          "enum": ["Male", "Female", "Other", "Prefer not to say", ""]
-        },
-        "departmentId": {
-          "type": "string",
-          "minLength": 2,
-          "maxLength": 64,
-          "pattern": "^[a-zA-Z0-9_-]+$"
-        },
-        "departmentName": {
-          "type": "string",
-          "minLength": 2,
-          "maxLength": 100
-        },
-        "doctorId": {
-          "type": "string",
-          "minLength": 2,
-          "maxLength": 64,
-          "pattern": "^[a-zA-Z0-9_-]+$"
-        },
-        "doctorName": {
-          "type": "string",
-          "minLength": 2,
-          "maxLength": 100
-        },
-        "opdFee": {
-          "type": "number"
-        },
-        "appointmentDate": {
-          "type": "string",
-          "minLength": 10,
-          "maxLength": 10,
-          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
-        },
-        "timeSlot": {
-          "type": "string",
-          "minLength": 3,
-          "maxLength": 20
-        },
-        "reason": {
-          "type": "string",
-          "maxLength": 500
-        },
-        "status": {
-          "type": "string",
-          "enum": ["pending", "approved", "rejected", "completed", "cancelled"]
-        },
-        "slotLockId": {
-          "type": "string",
-          "minLength": 5,
-          "maxLength": 128,
-          "pattern": "^[a-zA-Z0-9_-]+$"
-        },
-        "statusLookupId": {
-          "type": "string",
-          "minLength": 64,
-          "maxLength": 64,
-          "pattern": "^[a-f0-9]{64}$"
-        },
-        "adminNote": {
-          "type": "string",
-          "maxLength": 300
-        },
-        "reminderTiming": {
-          "type": "string",
-          "enum": ["24_hours_before", "2_hours_before", "morning_of_visit", "none"]
-        },
-        "reminderChannel": {
-          "type": "string",
-          "enum": ["Calendar & Browser Alert", "WhatsApp Desk Reminder", "None"]
-        },
-        "reminderStatus": {
-          "type": "string",
-          "enum": ["pending", "sent", "not_needed"]
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "format": "date-time"
-        }
+        "bookingId": { "type": "string", "minLength": 15, "maxLength": 15, "pattern": "^SXH-[0-9]{4}-[A-Z0-9]{6}$" },
+        "patientName": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "mobileNumber": { "type": "string", "minLength": 7, "maxLength": 15, "pattern": "^[0-9]{7,15}$" },
+        "age": { "type": "number" },
+        "gender": { "type": "string", "enum": ["Male", "Female", "Other", "Prefer not to say", ""] },
+        "departmentId": { "type": "string", "minLength": 2, "maxLength": 64, "pattern": "^[a-zA-Z0-9_-]+$" },
+        "departmentName": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "doctorId": { "type": "string", "minLength": 2, "maxLength": 64, "pattern": "^[a-zA-Z0-9_-]+$" },
+        "doctorName": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "opdFee": { "type": "number" },
+        "appointmentDate": { "type": "string", "minLength": 10, "maxLength": 10, "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+        "timeSlot": { "type": "string", "minLength": 3, "maxLength": 20 },
+        "reason": { "type": "string", "maxLength": 500 },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected", "completed", "cancelled"] },
+        "slotLockId": { "type": "string", "minLength": 5, "maxLength": 128, "pattern": "^[a-zA-Z0-9_-]+$" },
+        "statusLookupId": { "type": "string", "minLength": 64, "maxLength": 64, "pattern": "^[a-f0-9]{64}$" },
+        "adminNote": { "type": "string", "maxLength": 300 },
+        "reminderTiming": { "type": "string", "enum": ["24_hours_before", "2_hours_before", "morning_of_visit", "none"] },
+        "reminderChannel": { "type": "string", "enum": ["Calendar & Browser Alert", "WhatsApp Desk Reminder", "None"] },
+        "reminderStatus": { "type": "string", "enum": ["pending", "sent", "not_needed"] },
+        "paymentMethod": { "type": "string", "enum": ["fonepay_qr", "pay_at_desk"] },
+        "paymentStatus": { "type": "string", "enum": ["unpaid", "pending_verification", "verified", "rejected"] },
+        "paymentId": { "type": "string", "maxLength": 128 },
+        "paymentRef": { "type": "string", "maxLength": 32 },
+        "transactionId": { "type": "string", "maxLength": 64 },
+        "ownerUid": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": [
-        "bookingId",
-        "patientName",
-        "mobileNumber",
-        "age",
-        "gender",
-        "departmentId",
-        "departmentName",
-        "doctorId",
-        "doctorName",
-        "opdFee",
-        "appointmentDate",
-        "timeSlot",
-        "reason",
-        "status",
-        "slotLockId",
-        "statusLookupId",
-        "adminNote",
-        "reminderTiming",
-        "reminderChannel",
-        "reminderStatus",
-        "createdAt",
-        "updatedAt"
+        "bookingId", "patientName", "mobileNumber", "age", "gender",
+        "departmentId", "departmentName", "doctorId", "doctorName",
+        "opdFee", "appointmentDate", "timeSlot", "reason", "status",
+        "slotLockId", "statusLookupId", "adminNote", "createdAt", "updatedAt"
       ]
     },
     "AppointmentStatus": {
@@ -289,86 +99,193 @@
       "description": "SHA-256 keyed status summary requiring both exact booking ID and verified mobile number to read.",
       "type": "object",
       "properties": {
-        "bookingId": {
-          "type": "string",
-          "minLength": 15,
-          "maxLength": 15,
-          "pattern": "^SXH-[0-9]{4}-[A-Z0-9]{6}$"
-        },
-        "appointmentId": {
-          "type": "string",
-          "minLength": 2,
-          "maxLength": 64,
-          "pattern": "^[a-zA-Z0-9_-]+$"
-        },
-        "patientInitials": {
-          "type": "string",
-          "maxLength": 10
-        },
-        "departmentName": {
-          "type": "string",
-          "minLength": 2,
-          "maxLength": 100
-        },
-        "doctorName": {
-          "type": "string",
-          "minLength": 2,
-          "maxLength": 100
-        },
-        "opdFee": {
-          "type": "number"
-        },
-        "appointmentDate": {
-          "type": "string",
-          "minLength": 10,
-          "maxLength": 10,
-          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
-        },
-        "timeSlot": {
-          "type": "string",
-          "minLength": 3,
-          "maxLength": 20
-        },
-        "status": {
-          "type": "string",
-          "enum": ["pending", "approved", "rejected", "completed", "cancelled"]
-        },
-        "adminNote": {
-          "type": "string",
-          "maxLength": 300
-        },
-        "reminderTiming": {
-          "type": "string",
-          "enum": ["24_hours_before", "2_hours_before", "morning_of_visit", "none"]
-        },
-        "reminderChannel": {
-          "type": "string",
-          "enum": ["Calendar & Browser Alert", "WhatsApp Desk Reminder", "None"]
-        },
-        "reminderStatus": {
-          "type": "string",
-          "enum": ["pending", "sent", "not_needed"]
-        },
-        "updatedAt": {
-          "type": "string",
-          "format": "date-time"
-        }
+        "bookingId": { "type": "string", "minLength": 15, "maxLength": 15, "pattern": "^SXH-[0-9]{4}-[A-Z0-9]{6}$" },
+        "appointmentId": { "type": "string", "minLength": 2, "maxLength": 128, "pattern": "^[a-zA-Z0-9_-]+$" },
+        "patientInitials": { "type": "string", "maxLength": 10 },
+        "departmentName": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "doctorName": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "opdFee": { "type": "number" },
+        "appointmentDate": { "type": "string", "minLength": 10, "maxLength": 10, "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+        "timeSlot": { "type": "string", "minLength": 3, "maxLength": 20 },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected", "completed", "cancelled"] },
+        "adminNote": { "type": "string", "maxLength": 300 },
+        "reminderTiming": { "type": "string", "enum": ["24_hours_before", "2_hours_before", "morning_of_visit", "none"] },
+        "reminderChannel": { "type": "string", "enum": ["Calendar & Browser Alert", "WhatsApp Desk Reminder", "None"] },
+        "reminderStatus": { "type": "string", "enum": ["pending", "sent", "not_needed"] },
+        "paymentMethod": { "type": "string", "enum": ["fonepay_qr", "pay_at_desk"] },
+        "paymentStatus": { "type": "string", "enum": ["unpaid", "pending_verification", "verified", "rejected"] },
+        "paymentId": { "type": "string", "maxLength": 128 },
+        "paymentRef": { "type": "string", "maxLength": 32 },
+        "transactionId": { "type": "string", "maxLength": 64 },
+        "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": [
-        "bookingId",
-        "appointmentId",
-        "patientInitials",
-        "departmentName",
-        "doctorName",
-        "opdFee",
-        "appointmentDate",
-        "timeSlot",
-        "status",
-        "adminNote",
-        "reminderTiming",
-        "reminderChannel",
-        "reminderStatus",
-        "updatedAt"
+        "bookingId", "appointmentId", "patientInitials", "departmentName",
+        "doctorName", "opdFee", "appointmentDate", "timeSlot",
+        "status", "adminNote", "updatedAt"
+      ]
+    },
+    "Payment": {
+      "title": "Payment",
+      "description": "Fonepay QR payment record for General Hospital Bills or Appointment OPD Fees.",
+      "type": "object",
+      "properties": {
+        "paymentRef": { "type": "string", "pattern": "^PAY-[0-9]{4}-[A-Z0-9]{6}$" },
+        "paymentCategory": { "type": "string", "enum": ["general", "appointment"] },
+        "paymentMethod": { "type": "string", "enum": ["fonepay_qr", "pay_at_desk"] },
+        "patientName": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "mobileNumber": { "type": "string", "pattern": "^[0-9]{7,15}$" },
+        "amount": { "type": "number" },
+        "transactionId": { "type": "string", "minLength": 4, "maxLength": 64 },
+        "txLockId": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "purpose": { "type": "string", "maxLength": 250 },
+        "bookingId": { "type": "string", "maxLength": 32 },
+        "appointmentId": { "type": "string", "maxLength": 128 },
+        "doctorName": { "type": "string", "maxLength": 100 },
+        "departmentName": { "type": "string", "maxLength": 100 },
+        "appointmentDate": { "type": "string", "maxLength": 10 },
+        "timeSlot": { "type": "string", "maxLength": 20 },
+        "screenshotDataUrl": { "type": "string", "maxLength": 220000 },
+        "screenshotUrl": { "type": "string", "maxLength": 600 },
+        "verificationStatus": { "type": "string", "enum": ["pending_verification", "verified", "rejected"] },
+        "verificationMode": { "type": "string", "enum": ["manual_pending", "manual_admin", "fonepay_api"] },
+        "verifiedBy": { "type": "string", "maxLength": 160 },
+        "rejectionReason": { "type": "string", "maxLength": 300 },
+        "ownerUid": { "type": "string", "maxLength": 128 },
+        "portalLookupId": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "verifiedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "paymentRef", "paymentCategory", "paymentMethod", "patientName", "mobileNumber",
+        "amount", "transactionId", "txLockId", "purpose", "bookingId", "appointmentId",
+        "doctorName", "departmentName", "appointmentDate", "timeSlot",
+        "screenshotDataUrl", "screenshotUrl", "verificationStatus", "verificationMode",
+        "verifiedBy", "rejectionReason", "ownerUid", "portalLookupId", "createdAt", "updatedAt"
+      ]
+    },
+    "PaymentTxLock": {
+      "title": "PaymentTxLock",
+      "description": "SHA-256 lock document preventing duplicate Fonepay transaction ID submissions across all payments.",
+      "type": "object",
+      "properties": {
+        "transactionId": { "type": "string", "minLength": 4, "maxLength": 64 },
+        "paymentId": { "type": "string", "minLength": 2, "maxLength": 128 },
+        "paymentRef": { "type": "string", "pattern": "^PAY-[0-9]{4}-[A-Z0-9]{6}$" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["transactionId", "paymentId", "paymentRef", "createdAt"]
+    },
+    "PaymentPortal": {
+      "title": "PaymentPortal",
+      "description": "SHA-256 keyed payment summary requiring both Payment Ref and registered mobile number to inspect.",
+      "type": "object",
+      "properties": {
+        "paymentId": { "type": "string" },
+        "paymentRef": { "type": "string", "pattern": "^PAY-[0-9]{4}-[A-Z0-9]{6}$" },
+        "paymentCategory": { "type": "string", "enum": ["general", "appointment"] },
+        "patientInitials": { "type": "string", "maxLength": 10 },
+        "amount": { "type": "number" },
+        "transactionId": { "type": "string" },
+        "purpose": { "type": "string" },
+        "bookingId": { "type": "string" },
+        "appointmentId": { "type": "string" },
+        "doctorName": { "type": "string" },
+        "departmentName": { "type": "string" },
+        "appointmentDate": { "type": "string" },
+        "timeSlot": { "type": "string" },
+        "screenshotDataUrl": { "type": "string", "maxLength": 220000 },
+        "screenshotUrl": { "type": "string", "maxLength": 600 },
+        "verificationStatus": { "type": "string", "enum": ["pending_verification", "verified", "rejected"] },
+        "rejectionReason": { "type": "string", "maxLength": 300 },
+        "createdAtIso": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "verifiedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "paymentId", "paymentRef", "paymentCategory", "patientInitials", "amount",
+        "transactionId", "purpose", "bookingId", "appointmentId", "doctorName",
+        "departmentName", "appointmentDate", "timeSlot", "screenshotDataUrl",
+        "screenshotUrl", "verificationStatus", "rejectionReason", "createdAtIso", "updatedAt"
+      ]
+    },
+    "RefundRequest": {
+      "title": "RefundRequest",
+      "description": "Patient refund request bound to a verified payment and processed by hospital administrators.",
+      "type": "object",
+      "properties": {
+        "refundRef": { "type": "string", "pattern": "^REF-[0-9]{4}-[A-Z0-9]{6}$" },
+        "paymentId": { "type": "string" },
+        "paymentRef": { "type": "string" },
+        "bookingId": { "type": "string" },
+        "appointmentId": { "type": "string" },
+        "patientName": { "type": "string" },
+        "mobileNumber": { "type": "string" },
+        "doctorName": { "type": "string" },
+        "departmentName": { "type": "string" },
+        "appointmentDate": { "type": "string" },
+        "timeSlot": { "type": "string" },
+        "amount": { "type": "number" },
+        "reason": { "type": "string", "minLength": 5, "maxLength": 500 },
+        "eligibilityType": { "type": "string", "enum": ["standard_24h", "hospital_cancelled"] },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected", "refunded"] },
+        "refundTxRef": { "type": "string", "maxLength": 100 },
+        "adminNote": { "type": "string", "maxLength": 300 },
+        "processedBy": { "type": "string", "maxLength": 160 },
+        "ownerUid": { "type": "string", "maxLength": 128 },
+        "portalLookupId": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "refundedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "refundRef", "paymentId", "paymentRef", "bookingId", "appointmentId",
+        "patientName", "mobileNumber", "doctorName", "departmentName",
+        "appointmentDate", "timeSlot", "amount", "reason", "eligibilityType",
+        "status", "refundTxRef", "adminNote", "processedBy", "ownerUid",
+        "portalLookupId", "createdAt", "updatedAt"
+      ]
+    },
+    "RefundLock": {
+      "title": "RefundLock",
+      "description": "Atomic lock preventing duplicate refund requests against the same verified payment.",
+      "type": "object",
+      "properties": {
+        "paymentId": { "type": "string" },
+        "refundId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["paymentId", "refundId", "createdAt"]
+    },
+    "RefundPortal": {
+      "title": "RefundPortal",
+      "description": "SHA-256 keyed refund status summary readable by the verified patient possessing Payment Ref + Mobile Number.",
+      "type": "object",
+      "properties": {
+        "refundId": { "type": "string" },
+        "refundRef": { "type": "string" },
+        "paymentId": { "type": "string" },
+        "paymentRef": { "type": "string" },
+        "bookingId": { "type": "string" },
+        "doctorName": { "type": "string" },
+        "appointmentDate": { "type": "string" },
+        "timeSlot": { "type": "string" },
+        "amount": { "type": "number" },
+        "reason": { "type": "string" },
+        "eligibilityType": { "type": "string", "enum": ["standard_24h", "hospital_cancelled"] },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected", "refunded"] },
+        "refundTxRef": { "type": "string" },
+        "adminNote": { "type": "string" },
+        "createdAtIso": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "refundedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "refundId", "refundRef", "paymentId", "paymentRef", "bookingId",
+        "doctorName", "appointmentDate", "timeSlot", "amount", "reason",
+        "eligibilityType", "status", "refundTxRef", "adminNote",
+        "createdAtIso", "updatedAt"
       ]
     },
     "PatientFeedback": {
@@ -376,73 +293,26 @@
       "description": "Verified patient visit feedback and ratings moderated by hospital administrators.",
       "type": "object",
       "properties": {
-        "patientName": {
-          "type": "string",
-          "minLength": 2,
-          "maxLength": 80
-        },
-        "departmentName": {
-          "type": "string",
-          "minLength": 2,
-          "maxLength": 100
-        },
-        "doctorName": {
-          "type": "string",
-          "maxLength": 100
-        },
-        "visitType": {
-          "type": "string",
-          "enum": ["OPD Consultation", "Emergency / Trauma", "Inpatient Ward", "Diagnostics / Lab"]
-        },
-        "rating": {
-          "type": "number"
-        },
-        "comment": {
-          "type": "string",
-          "minLength": 5,
-          "maxLength": 500
-        },
-        "isPublished": {
-          "type": "boolean"
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time"
-        }
+        "patientName": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "departmentName": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "doctorName": { "type": "string", "maxLength": 100 },
+        "visitType": { "type": "string", "enum": ["OPD Consultation", "Emergency / Trauma", "Inpatient Ward", "Diagnostics / Lab"] },
+        "rating": { "type": "number" },
+        "comment": { "type": "string", "minLength": 5, "maxLength": 500 },
+        "isPublished": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": [
-        "patientName",
-        "departmentName",
-        "doctorName",
-        "visitType",
-        "rating",
-        "comment",
-        "isPublished",
-        "createdAt"
-      ]
+      "required": ["patientName", "departmentName", "doctorName", "visitType", "rating", "comment", "isPublished", "createdAt"]
     },
     "AdminUser": {
       "title": "AdminUser",
       "description": "Authorized hospital administrator account record.",
       "type": "object",
       "properties": {
-        "uid": {
-          "type": "string",
-          "minLength": 2,
-          "maxLength": 128
-        },
-        "email": {
-          "type": "string",
-          "maxLength": 160
-        },
-        "role": {
-          "type": "string",
-          "enum": ["admin"]
-        },
-        "addedAt": {
-          "type": "string",
-          "format": "date-time"
-        }
+        "uid": { "type": "string", "minLength": 2, "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 160 },
+        "role": { "type": "string", "enum": ["admin"] },
+        "addedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["uid", "email", "role", "addedAt"]
     }
@@ -462,11 +332,35 @@
     },
     "/appointments/{appointmentId}": {
       "schema": { "$ref": "#/entities/Appointment" },
-      "description": "Patient appointment records containing PII and reminder preferences, readable and manageable strictly by admins."
+      "description": "Patient appointment records readable strictly by admins or authenticated ownerUid."
     },
     "/appointmentStatus/{lookupId}": {
       "schema": { "$ref": "#/entities/AppointmentStatus" },
       "description": "SHA-256 keyed public status lookup requiring exact booking ID and mobile number."
+    },
+    "/payments/{paymentId}": {
+      "schema": { "$ref": "#/entities/Payment" },
+      "description": "Fonepay QR payment records readable by admins or authenticated ownerUid."
+    },
+    "/paymentTxLocks/{txLockId}": {
+      "schema": { "$ref": "#/entities/PaymentTxLock" },
+      "description": "SHA-256 transaction lock preventing duplicate transaction ID submissions."
+    },
+    "/paymentPortals/{portalLookupId}": {
+      "schema": { "$ref": "#/entities/PaymentPortal" },
+      "description": "SHA-256 keyed payment summary readable by verified patient (Payment Ref + Mobile Number)."
+    },
+    "/refunds/{refundId}": {
+      "schema": { "$ref": "#/entities/RefundRequest" },
+      "description": "Patient refund requests bound to verified payments and processed by admins."
+    },
+    "/refundLocks/{paymentId}": {
+      "schema": { "$ref": "#/entities/RefundLock" },
+      "description": "Atomic lock preventing duplicate refund requests for a single payment."
+    },
+    "/refundPortals/{portalLookupId}": {
+      "schema": { "$ref": "#/entities/RefundPortal" },
+      "description": "SHA-256 keyed refund status summary readable by verified patient (Payment Ref + Mobile Number)."
     },
     "/feedback/{feedbackId}": {
       "schema": { "$ref": "#/entities/PatientFeedback" },

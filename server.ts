@@ -1,15 +1,66 @@
 import 'dotenv/config';
+import crypto from 'crypto';
 import express from 'express';
+import { getApp, getApps, initializeApp as initializeAdminApp } from 'firebase-admin/app';
+import { getAuth as getAdminAuth } from 'firebase-admin/auth';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI, type Content } from '@google/genai';
+import firebaseConfig from './firebase-applet-config.json' with { type: 'json' };
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PORT = Number(process.env.PORT) || 3000;
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+
+const adminApp = getApps().length
+  ? getApp()
+  : initializeAdminApp({ projectId: firebaseConfig.projectId });
+const adminAuth = getAdminAuth(adminApp);
+
+const BOOTSTRAP_ADMIN_EMAIL = 'f13051597@gmail.com';
+const FONEPAY_TERMINAL_ID = '2222050014357399';
+const FONEPAY_BRANCH = 'BIRTAMOD';
+
+function getFonepayEnvConfig() {
+  const merchantCode = (process.env.FONEPAY_MERCHANT_CODE || '').trim();
+  const username = (process.env.FONEPAY_USERNAME || '').trim();
+  const password = (process.env.FONEPAY_PASSWORD || '').trim();
+  const secretKey = (process.env.FONEPAY_SECRET_KEY || '').trim();
+  const apiBaseUrl = (
+    process.env.FONEPAY_API_BASE_URL || 'https://merchantapi.fonepay.com'
+  )
+    .trim()
+    .replace(/\/+$/, '');
+
+  const isConfigured = Boolean(merchantCode && username && password && secretKey);
+  return { merchantCode, username, password, secretKey, apiBaseUrl, isConfigured };
+}
+
+function parseSlotToMinutesNpt(timeSlot: string): { hours: number; minutes: number } {
+  const match = timeSlot.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) return { hours: 9, minutes: 0 };
+  let hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  const period = match[3].toUpperCase();
+  if (period === 'PM' && hours !== 12) hours += 12;
+  if (period === 'AM' && hours === 12) hours = 0;
+  return { hours, minutes };
+}
+
+function computeAppointmentTimestampUtcMs(appointmentDate: string, timeSlot: string): number | null {
+  const match = appointmentDate.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const { hours, minutes } = parseSlotToMinutesNpt(timeSlot);
+  // Nepal Standard Time is UTC+05:45 (345 minutes ahead of UTC)
+  const utcMs = Date.UTC(year, month - 1, day, hours, minutes, 0, 0) - 345 * 60 * 1000;
+  return Number.isFinite(utcMs) ? utcMs : null;
+}
 
 // Birtamode, Jhapa, Nepal coordinates for local hospital retrieval bias
 const HOSPITAL_LAT_LNG = {
@@ -178,6 +229,280 @@ async function startServer() {
 
   app.get('/api/health', (_req, res) => {
     res.json({ ok: true });
+  });
+
+  // Non-secret Fonepay merchant configuration & API readiness status
+  app.get('/api/payments/fonepay/config', (_req, res) => {
+    const fonepay = getFonepayEnvConfig();
+    res.json({
+      merchantName: 'SPINE X. SUPERSPECIALITY HOSPITAL AND TRAUMA CENTER PRIVATE LIMITED',
+      terminalId: FONEPAY_TERMINAL_ID,
+      branch: FONEPAY_BRANCH,
+      acquiredBy: 'Siddhartha Bank',
+      apiConfigured: fonepay.isConfigured,
+      verificationMode: fonepay.isConfigured ? 'fonepay_api' : 'manual_admin_verification',
+    });
+  });
+
+  // Backend structural validation for payment submission before Firestore atomic commit
+  app.post('/api/payments/validate-submission', (req, res) => {
+    const body = req.body as {
+      patientName?: unknown;
+      mobileNumber?: unknown;
+      amount?: unknown;
+      transactionId?: unknown;
+      paymentCategory?: unknown;
+      hasScreenshot?: unknown;
+    };
+
+    const patientName = typeof body.patientName === 'string' ? body.patientName.trim() : '';
+    const mobile = typeof body.mobileNumber === 'string' ? body.mobileNumber.replace(/\D/g, '') : '';
+    const amount = Number(body.amount);
+    const txId =
+      typeof body.transactionId === 'string'
+        ? body.transactionId.trim().toUpperCase().replace(/\s+/g, '')
+        : '';
+    const category = body.paymentCategory === 'appointment' ? 'appointment' : 'general';
+
+    if (patientName.length < 2 || patientName.length > 100) {
+      res.status(400).json({ valid: false, error: 'Patient full name must be 2–100 characters.' });
+      return;
+    }
+    if (!/^[0-9]{7,15}$/.test(mobile)) {
+      res.status(400).json({ valid: false, error: 'Please enter a valid 7 to 15 digit mobile number.' });
+      return;
+    }
+    if (!Number.isFinite(amount) || amount < 10 || amount > 500000) {
+      res.status(400).json({
+        valid: false,
+        error: 'Payment amount must be between NPR 10 and NPR 500,000.',
+      });
+      return;
+    }
+    if (!/^[A-Z0-9._-]{4,64}$/.test(txId)) {
+      res.status(400).json({
+        valid: false,
+        error: 'Transaction ID must be 4–64 alphanumeric characters (e.g., Fonepay Ref / Trace ID).',
+      });
+      return;
+    }
+    if (!body.hasScreenshot) {
+      res.status(400).json({
+        valid: false,
+        error: 'Please upload your payment confirmation screenshot before submitting.',
+      });
+      return;
+    }
+
+    res.json({
+      valid: true,
+      normalizedTransactionId: txId,
+      normalizedMobile: mobile.startsWith('977') && mobile.length === 13 ? mobile.slice(3) : mobile,
+      amount: Math.round(amount),
+      paymentCategory: category,
+    });
+  });
+
+  // Server-side Fonepay Merchant Verification endpoint (requires Firebase ID token for admin check)
+  app.post('/api/payments/fonepay/verify', async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization || '';
+      const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+      if (!idToken) {
+        res.status(401).json({ verified: false, error: 'Authentication required for payment verification.' });
+        return;
+      }
+
+      const decoded = await adminAuth.verifyIdToken(idToken);
+      if (!decoded.email_verified) {
+        res.status(403).json({ verified: false, error: 'Verified Google email required.' });
+        return;
+      }
+
+      const { paymentRef, transactionId, amount } = req.body as {
+        paymentRef?: unknown;
+        transactionId?: unknown;
+        amount?: unknown;
+      };
+
+      const cleanRef = typeof paymentRef === 'string' ? paymentRef.trim() : '';
+      const cleanTx =
+        typeof transactionId === 'string'
+          ? transactionId.trim().toUpperCase().replace(/\s+/g, '')
+          : '';
+      const numericAmount = Number(amount);
+
+      if (!cleanRef || !cleanTx || !Number.isFinite(numericAmount) || numericAmount <= 0) {
+        res.status(400).json({ verified: false, error: 'Invalid payment verification parameters.' });
+        return;
+      }
+
+      const fonepay = getFonepayEnvConfig();
+      if (!fonepay.isConfigured) {
+        res.json({
+          verified: false,
+          mode: 'manual_admin_verification',
+          isAdminCaller: decoded.email === BOOTSTRAP_ADMIN_EMAIL,
+          message:
+            'Official Fonepay Merchant API credentials are not configured on the server. Authorized administrators must manually inspect the Fonepay statement & receipt screenshot before verifying.',
+        });
+        return;
+      }
+
+      // Official Fonepay Merchant Verification API HMAC-SHA512 signature & verification call
+      const prn = cleanRef;
+      const amt = numericAmount.toFixed(2);
+      const dataToSign = `${fonepay.merchantCode},${amt},${prn},${cleanTx}`;
+      const dv = crypto
+        .createHmac('sha512', fonepay.secretKey)
+        .update(dataToSign)
+        .digest('hex')
+        .toUpperCase();
+
+      const verifyUrl = `${fonepay.apiBaseUrl}/api/merchant/merchantDetailsForThirdParty/txnVerification`;
+      const params = new URLSearchParams({
+        PRN: prn,
+        PID: fonepay.merchantCode,
+        BID: cleanTx,
+        UID: cleanTx,
+        AMT: amt,
+        DV: dv,
+      });
+
+      const apiResp = await fetch(`${verifyUrl}?${params.toString()}`, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json, text/xml',
+          Authorization: `Basic ${Buffer.from(`${fonepay.username}:${fonepay.password}`).toString('base64')}`,
+        },
+      });
+
+      const bodyText = await apiResp.text();
+      const upper = bodyText.toUpperCase();
+      const confirmedSuccess =
+        apiResp.ok &&
+        (upper.includes('<SUCCESS>TRUE</SUCCESS>') ||
+          upper.includes('"SUCCESS":TRUE') ||
+          upper.includes('"RESPONSE_CODE":"SUCCESS"'));
+
+      res.json({
+        verified: confirmedSuccess,
+        mode: 'fonepay_api',
+        fonepayTraceId: confirmedSuccess ? cleanTx : null,
+        message: confirmedSuccess
+          ? 'Transaction verified via official Fonepay Merchant API.'
+          : 'Fonepay Merchant API did not confirm this transaction as settled.',
+      });
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Unable to verify payment request.';
+      res.status(500).json({ verified: false, error: msg });
+    }
+  });
+
+  // Authoritative server-side Refund Eligibility check (Nepal Standard Time UTC+05:45)
+  app.post('/api/refunds/validate-eligibility', (req, res) => {
+    const body = req.body as {
+      appointmentDate?: unknown;
+      timeSlot?: unknown;
+      appointmentStatus?: unknown;
+      paymentVerificationStatus?: unknown;
+      amount?: unknown;
+    };
+
+    const appointmentDate = typeof body.appointmentDate === 'string' ? body.appointmentDate.trim() : '';
+    const timeSlot = typeof body.timeSlot === 'string' ? body.timeSlot.trim() : '09:00 AM';
+    const appointmentStatus =
+      typeof body.appointmentStatus === 'string' ? body.appointmentStatus.trim() : '';
+    const paymentVerificationStatus =
+      typeof body.paymentVerificationStatus === 'string' ? body.paymentVerificationStatus.trim() : '';
+    const amount = Number(body.amount);
+
+    if (paymentVerificationStatus !== 'verified') {
+      res.json({
+        eligible: false,
+        refundPercentage: 0,
+        eligibilityType: null,
+        hoursUntilAppointment: null,
+        reason: 'Only verified payments are eligible for a refund request.',
+      });
+      return;
+    }
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      res.json({
+        eligible: false,
+        refundPercentage: 0,
+        eligibilityType: null,
+        hoursUntilAppointment: null,
+        reason: 'Invalid paid amount for refund.',
+      });
+      return;
+    }
+
+    // Hospital-cancelled (or rejected by hospital) appointments are always eligible for 100% refund
+    if (appointmentStatus === 'cancelled' || appointmentStatus === 'rejected') {
+      res.json({
+        eligible: true,
+        refundPercentage: 100,
+        eligibilityType: 'hospital_cancelled',
+        hoursUntilAppointment: null,
+        reason:
+          'Hospital-cancelled appointment: eligible for a 100% refund regardless of the 24-hour window.',
+      });
+      return;
+    }
+
+    if (appointmentStatus === 'completed') {
+      res.json({
+        eligible: false,
+        refundPercentage: 0,
+        eligibilityType: null,
+        hoursUntilAppointment: 0,
+        reason: 'Completed consultations are not eligible for an online refund.',
+      });
+      return;
+    }
+
+    if (!appointmentDate) {
+      res.json({
+        eligible: true,
+        refundPercentage: 100,
+        eligibilityType: 'standard_24h',
+        hoursUntilAppointment: null,
+        reason: 'General hospital payment eligible for Accounts Desk refund review.',
+      });
+      return;
+    }
+
+    const apptUtcMs = computeAppointmentTimestampUtcMs(appointmentDate, timeSlot);
+    if (apptUtcMs === null) {
+      res.status(400).json({
+        eligible: false,
+        error: 'Invalid appointment date or time slot.',
+      });
+      return;
+    }
+
+    const hoursUntil = (apptUtcMs - Date.now()) / (1000 * 60 * 60);
+    if (hoursUntil >= 24) {
+      res.json({
+        eligible: true,
+        refundPercentage: 100,
+        eligibilityType: 'standard_24h',
+        hoursUntilAppointment: Math.floor(hoursUntil),
+        reason: `Eligible for refund (${Math.floor(hoursUntil)} hours remaining before appointment).`,
+      });
+      return;
+    }
+
+    res.json({
+      eligible: false,
+      refundPercentage: 0,
+      eligibilityType: null,
+      hoursUntilAppointment: Number(hoursUntil.toFixed(1)),
+      reason:
+        'Normal refund requests are unavailable within 24 hours of the scheduled appointment (unless cancelled by the hospital).',
+    });
   });
 
   // Multi-turn Gemini Chatbot Endpoint (supports Search Grounding, Maps Grounding, and Fast Lite)

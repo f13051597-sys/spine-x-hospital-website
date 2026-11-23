@@ -28,6 +28,30 @@ export type FeedbackVisitType =
   | 'Inpatient Ward'
   | 'Diagnostics / Lab';
 
+export type PaymentCategory = 'general' | 'appointment';
+
+export type PaymentMethod = 'fonepay_qr' | 'pay_at_desk';
+
+export type PaymentVerificationStatus =
+  | 'pending_verification'
+  | 'verified'
+  | 'rejected';
+
+export type PaymentVerificationMode =
+  | 'manual_pending'
+  | 'manual_admin'
+  | 'fonepay_api';
+
+export type AppointmentPaymentStatus =
+  | 'unpaid'
+  | 'pending_verification'
+  | 'verified'
+  | 'rejected';
+
+export type RefundStatus = 'pending' | 'approved' | 'rejected' | 'refunded';
+
+export type RefundEligibilityType = 'standard_24h' | 'hospital_cancelled';
+
 export interface Department {
   id: string;
   name: string;
@@ -89,6 +113,12 @@ export interface Appointment {
   reminderTiming?: ReminderTiming;
   reminderChannel?: ReminderChannel;
   reminderStatus?: ReminderStatus;
+  paymentMethod?: PaymentMethod;
+  paymentStatus?: AppointmentPaymentStatus;
+  paymentId?: string;
+  paymentRef?: string;
+  transactionId?: string;
+  ownerUid?: string;
   createdAt?: Timestamp | null;
   updatedAt?: Timestamp | null;
 }
@@ -107,7 +137,112 @@ export interface AppointmentStatusRecord {
   reminderTiming?: ReminderTiming;
   reminderChannel?: ReminderChannel;
   reminderStatus?: ReminderStatus;
+  paymentMethod?: PaymentMethod;
+  paymentStatus?: AppointmentPaymentStatus;
+  paymentId?: string;
+  paymentRef?: string;
+  transactionId?: string;
   updatedAt?: Timestamp | null;
+}
+
+export interface PaymentRecord {
+  id: string;
+  paymentRef: string;
+  paymentCategory: PaymentCategory;
+  paymentMethod: PaymentMethod;
+  patientName: string;
+  mobileNumber: string;
+  amount: number;
+  transactionId: string;
+  txLockId: string;
+  purpose: string;
+  bookingId: string;
+  appointmentId: string;
+  doctorName: string;
+  departmentName: string;
+  appointmentDate: string;
+  timeSlot: string;
+  screenshotDataUrl: string;
+  screenshotUrl: string;
+  verificationStatus: PaymentVerificationStatus;
+  verificationMode: PaymentVerificationMode;
+  verifiedBy: string;
+  rejectionReason: string;
+  ownerUid: string;
+  portalLookupId: string;
+  createdAt?: Timestamp | null;
+  updatedAt?: Timestamp | null;
+  verifiedAt?: Timestamp | null;
+}
+
+export interface PaymentPortalRecord {
+  paymentId: string;
+  paymentRef: string;
+  paymentCategory: PaymentCategory;
+  patientInitials: string;
+  amount: number;
+  transactionId: string;
+  purpose: string;
+  bookingId: string;
+  appointmentId: string;
+  doctorName: string;
+  departmentName: string;
+  appointmentDate: string;
+  timeSlot: string;
+  screenshotDataUrl: string;
+  screenshotUrl: string;
+  verificationStatus: PaymentVerificationStatus;
+  rejectionReason: string;
+  createdAtIso: string;
+  updatedAt?: Timestamp | null;
+  verifiedAt?: Timestamp | null;
+}
+
+export interface RefundRequest {
+  id: string;
+  refundRef: string;
+  paymentId: string;
+  paymentRef: string;
+  bookingId: string;
+  appointmentId: string;
+  patientName: string;
+  mobileNumber: string;
+  doctorName: string;
+  departmentName: string;
+  appointmentDate: string;
+  timeSlot: string;
+  amount: number;
+  reason: string;
+  eligibilityType: RefundEligibilityType;
+  status: RefundStatus;
+  refundTxRef: string;
+  adminNote: string;
+  processedBy: string;
+  ownerUid: string;
+  portalLookupId: string;
+  createdAt?: Timestamp | null;
+  updatedAt?: Timestamp | null;
+  refundedAt?: Timestamp | null;
+}
+
+export interface RefundPortalRecord {
+  refundId: string;
+  refundRef: string;
+  paymentId: string;
+  paymentRef: string;
+  bookingId: string;
+  doctorName: string;
+  appointmentDate: string;
+  timeSlot: string;
+  amount: number;
+  reason: string;
+  eligibilityType: RefundEligibilityType;
+  status: RefundStatus;
+  refundTxRef: string;
+  adminNote: string;
+  createdAtIso: string;
+  updatedAt?: Timestamp | null;
+  refundedAt?: Timestamp | null;
 }
 
 export interface PatientFeedback {
@@ -127,6 +262,8 @@ export type HospitalView =
   | 'departments'
   | 'doctors'
   | 'book'
+  | 'pay'
+  | 'dashboard'
   | 'status'
   | 'about'
   | 'contact'

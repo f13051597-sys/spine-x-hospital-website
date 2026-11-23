@@ -20,12 +20,15 @@ import {
   Check,
   CheckCircle2,
   Clock,
+  CreditCard,
+  Eye,
   ImagePlus,
   Loader2,
   LogOut,
   MessageCircle,
   Plus,
   RefreshCw,
+  RotateCcw,
   Search,
   ShieldAlert,
   ShieldCheck,
@@ -39,7 +42,11 @@ import { DEFAULT_OPD_SLOTS } from '../data/hospitalCatalog';
 import { auth, db, googleProvider, handleFirestoreError, OperationType } from '../lib/firebase';
 import {
   adminDeleteFeedback,
+  adminRejectPayment,
   adminToggleFeedbackPublish,
+  adminUpdateRefundStatus,
+  adminVerifyPayment,
+  fetchFonepayConfigStatus,
   removeDepartment,
   removeDoctor,
   sanitizeSlugId,
@@ -48,6 +55,7 @@ import {
   updateAppointmentStatus,
   upsertDepartment,
   upsertDoctor,
+  verifyPaymentWithFonepayApi,
 } from '../services/hospitalService';
 import type {
   Appointment,
@@ -55,6 +63,9 @@ import type {
   Department,
   Doctor,
   PatientFeedback,
+  PaymentRecord,
+  RefundRequest,
+  RefundStatus,
 } from '../types/hospital';
 import { buildWhatsAppReminderHref, REMINDER_TIMING_LABELS } from '../utils/reminderUtils';
 
@@ -64,7 +75,16 @@ interface AdminDashboardProps {
   onCatalogUpdated: () => Promise<void>;
 }
 
-type AdminTab = 'appointments' | 'doctors' | 'departments' | 'feedback' | 'access';
+type AdminTab =
+  | 'appointments'
+  | 'payments'
+  | 'refunds'
+  | 'doctors'
+  | 'departments'
+  | 'feedback'
+  | 'access';
+
+type PaymentFilter = 'all' | 'general' | 'appointment' | 'pending_verification' | 'verified' | 'rejected';
 
 function getTodayPrefix(): { today: string; month: string } {
   const now = new Date();
@@ -131,10 +151,27 @@ export function AdminDashboard({
 
   const [activeTab, setActiveTab] = useState<AdminTab>('appointments');
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [payments, setPayments] = useState<PaymentRecord[]>([]);
+  const [refunds, setRefunds] = useState<RefundRequest[]>([]);
   const [feedbackItems, setFeedbackItems] = useState<PatientFeedback[]>([]);
   const [loadingAppointments, setLoadingAppointments] = useState(false);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  // Payment & Refund management state
+  const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>('all');
+  const [paymentSearch, setPaymentSearch] = useState('');
+  const [busyPaymentId, setBusyPaymentId] = useState<string | null>(null);
+  const [rejectReasonDrafts, setRejectReasonDrafts] = useState<Record<string, string>>({});
+  const [rejectingPaymentId, setRejectingPaymentId] = useState<string | null>(null);
+  const [previewScreenshotPayment, setPreviewScreenshotPayment] = useState<PaymentRecord | null>(null);
+  const [fonepayApiConfigured, setFonepayApiConfigured] = useState(false);
+
+  const [refundFilter, setRefundFilter] = useState<'all' | RefundStatus>('all');
+  const [busyRefundId, setBusyRefundId] = useState<string | null>(null);
+  const [refundTxDrafts, setRefundTxDrafts] = useState<Record<string, string>>({});
+  const [refundNoteDrafts, setRefundNoteDrafts] = useState<Record<string, string>>({});
+  const [markingRefundId, setMarkingRefundId] = useState<string | null>(null);
 
   // Appointment filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -174,10 +211,12 @@ export function AdminDashboard({
     return () => unsub();
   }, []);
 
-  // Attach real-time appointments + feedback listeners ONLY when authenticated
+  // Attach real-time listeners ONLY when authenticated
   useEffect(() => {
     if (!user) {
       setAppointments([]);
+      setPayments([]);
+      setRefunds([]);
       setFeedbackItems([]);
       return;
     }
@@ -185,6 +224,14 @@ export function AdminDashboard({
     let cancelled = false;
     setLoadingAppointments(true);
     setUnauthorized(false);
+
+    fetchFonepayConfigStatus()
+      .then((cfg) => {
+        if (!cancelled) setFonepayApiConfigured(cfg.apiConfigured);
+      })
+      .catch(() => {
+        if (!cancelled) setFonepayApiConfigured(false);
+      });
 
     const apptQuery = query(collection(db, 'appointments'), orderBy('createdAt', 'desc'));
     const unsubAppts = onSnapshot(
@@ -220,6 +267,40 @@ export function AdminDashboard({
       }
     );
 
+    const paymentsQuery = query(collection(db, 'payments'), orderBy('createdAt', 'desc'));
+    const unsubPayments = onSnapshot(
+      paymentsQuery,
+      (snapshot) => {
+        if (cancelled) return;
+        setPayments(
+          snapshot.docs.map((d) => ({
+            id: d.id,
+            ...(d.data() as Omit<PaymentRecord, 'id'>),
+          }))
+        );
+      },
+      (err) => {
+        console.warn('Admin payments listener warning:', err);
+      }
+    );
+
+    const refundsQuery = query(collection(db, 'refunds'), orderBy('createdAt', 'desc'));
+    const unsubRefunds = onSnapshot(
+      refundsQuery,
+      (snapshot) => {
+        if (cancelled) return;
+        setRefunds(
+          snapshot.docs.map((d) => ({
+            id: d.id,
+            ...(d.data() as Omit<RefundRequest, 'id'>),
+          }))
+        );
+      },
+      (err) => {
+        console.warn('Admin refunds listener warning:', err);
+      }
+    );
+
     const fbQuery = query(collection(db, 'feedback'), orderBy('createdAt', 'desc'));
     const unsubFb = onSnapshot(
       fbQuery,
@@ -240,6 +321,8 @@ export function AdminDashboard({
     return () => {
       cancelled = true;
       unsubAppts();
+      unsubPayments();
+      unsubRefunds();
       unsubFb();
     };
   }, [user, onCatalogUpdated]);
@@ -452,6 +535,121 @@ export function AdminDashboard({
     }
   };
 
+  const pendingPaymentsCount = useMemo(
+    () => payments.filter((p) => p.verificationStatus === 'pending_verification').length,
+    [payments]
+  );
+
+  const pendingRefundsCount = useMemo(
+    () => refunds.filter((r) => r.status === 'pending' || r.status === 'approved').length,
+    [refunds]
+  );
+
+  const filteredPayments = useMemo(() => {
+    const q = paymentSearch.trim().toLowerCase();
+    return payments.filter((p) => {
+      if (paymentFilter === 'general' && p.paymentCategory !== 'general') return false;
+      if (paymentFilter === 'appointment' && p.paymentCategory !== 'appointment') return false;
+      if (
+        (paymentFilter === 'pending_verification' ||
+          paymentFilter === 'verified' ||
+          paymentFilter === 'rejected') &&
+        p.verificationStatus !== paymentFilter
+      ) {
+        return false;
+      }
+      if (!q) return true;
+      return (
+        p.patientName.toLowerCase().includes(q) ||
+        p.mobileNumber.toLowerCase().includes(q) ||
+        p.transactionId.toLowerCase().includes(q) ||
+        p.paymentRef.toLowerCase().includes(q) ||
+        p.bookingId.toLowerCase().includes(q)
+      );
+    });
+  }, [payments, paymentFilter, paymentSearch]);
+
+  const filteredRefunds = useMemo(() => {
+    if (refundFilter === 'all') return refunds;
+    return refunds.filter((r) => r.status === refundFilter);
+  }, [refunds, refundFilter]);
+
+  const handleManualVerifyPayment = async (payment: PaymentRecord) => {
+    setActionError(null);
+    setActionMsg(null);
+    setBusyPaymentId(payment.id);
+    try {
+      const res = await adminVerifyPayment(payment, 'manual_admin', user?.email || 'admin');
+      setActionMsg(
+        res.appointmentAutoApproved
+          ? `Payment ${payment.paymentRef} verified and linked appointment ${payment.bookingId} automatically approved.`
+          : `Payment ${payment.paymentRef} marked as Verified.`
+      );
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Unable to verify payment.');
+    } finally {
+      setBusyPaymentId(null);
+    }
+  };
+
+  const handleApiVerifyPayment = async (payment: PaymentRecord) => {
+    if (!user) return;
+    setActionError(null);
+    setActionMsg(null);
+    setBusyPaymentId(payment.id);
+    try {
+      const idToken = await user.getIdToken();
+      const apiRes = await verifyPaymentWithFonepayApi(idToken, payment);
+      if (apiRes.verified) {
+        const res = await adminVerifyPayment(payment, 'fonepay_api', user.email || 'admin');
+        setActionMsg(
+          res.appointmentAutoApproved
+            ? `Fonepay API verified ${payment.paymentRef} and auto-approved ${payment.bookingId}.`
+            : `Fonepay API verified payment ${payment.paymentRef}.`
+        );
+      } else {
+        setActionError(apiRes.message || 'Fonepay API did not confirm this transaction.');
+      }
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Fonepay API verification error.');
+    } finally {
+      setBusyPaymentId(null);
+    }
+  };
+
+  const handleRejectPayment = async (payment: PaymentRecord) => {
+    setActionError(null);
+    setActionMsg(null);
+    setBusyPaymentId(payment.id);
+    try {
+      const reason = rejectReasonDrafts[payment.id] || '';
+      await adminRejectPayment(payment, reason, user?.email || 'admin');
+      setRejectingPaymentId(null);
+      setActionMsg(`Payment ${payment.paymentRef} marked as Rejected.`);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Unable to reject payment.');
+    } finally {
+      setBusyPaymentId(null);
+    }
+  };
+
+  const handleRefundTransition = async (refund: RefundRequest, nextStatus: RefundStatus) => {
+    setActionError(null);
+    setActionMsg(null);
+    setBusyRefundId(refund.id);
+    try {
+      const note = refundNoteDrafts[refund.id] ?? refund.adminNote ?? '';
+      const txRef = refundTxDrafts[refund.id] ?? refund.refundTxRef ?? '';
+      await adminUpdateRefundStatus(refund, nextStatus, note, txRef, user?.email || 'admin');
+      setMarkingRefundId(null);
+      setActionMsg(`Refund ${refund.refundRef} updated to ${nextStatus}.`);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Unable to update refund status.');
+    } finally {
+      setBusyRefundId(null);
+    }
+  };
+
   if (authLoading) {
     return (
       <section className="py-20 bg-slate-50 min-h-[70vh] flex items-center justify-center">
@@ -626,6 +824,14 @@ export function AdminDashboard({
           {(
             [
               { id: 'appointments', label: `Appointments (${appointments.length})` },
+              {
+                id: 'payments',
+                label: `Payments (${payments.length}${pendingPaymentsCount > 0 ? ` · ${pendingPaymentsCount} Pending` : ''})`,
+              },
+              {
+                id: 'refunds',
+                label: `Refunds (${refunds.length}${pendingRefundsCount > 0 ? ` · ${pendingRefundsCount} Open` : ''})`,
+              },
               { id: 'doctors', label: `Doctors (${doctors.length})` },
               { id: 'departments', label: `Departments (${departments.length})` },
               { id: 'feedback', label: `Feedback (${feedbackItems.length})` },
@@ -636,7 +842,7 @@ export function AdminDashboard({
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+              className={`px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                 activeTab === tab.id
                   ? 'bg-white text-slate-950 shadow-sm'
                   : 'text-slate-600 hover:text-slate-950'
@@ -817,6 +1023,28 @@ export function AdminDashboard({
                               </span>
                             </p>
                           )}
+                          {appt.paymentMethod === 'fonepay_qr' && (
+                            <p className="text-xs text-slate-700 flex flex-wrap items-center gap-2">
+                              <CreditCard className="w-3.5 h-3.5 text-[#0F4C81]" aria-hidden="true" />
+                              <span>
+                                Fonepay Payment: <span className="font-mono font-semibold">{appt.paymentRef}</span> · Tx:{' '}
+                                <span className="font-mono">{appt.transactionId}</span>
+                              </span>
+                              <span
+                                className={`px-2 py-0.5 rounded border text-[11px] font-medium capitalize ${
+                                  appt.paymentStatus === 'verified'
+                                    ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
+                                    : appt.paymentStatus === 'rejected'
+                                      ? 'bg-rose-50 text-rose-900 border-rose-200'
+                                      : 'bg-amber-50 text-amber-900 border-amber-200'
+                                }`}
+                              >
+                                {appt.paymentStatus === 'pending_verification'
+                                  ? 'Pending Verification'
+                                  : appt.paymentStatus}
+                              </span>
+                            </p>
+                          )}
                           {appt.reason && (
                             <p className="text-xs text-slate-600">Reason: {appt.reason}</p>
                           )}
@@ -949,6 +1177,412 @@ export function AdminDashboard({
                 })}
               </div>
             )}
+          </div>
+        )}
+
+        {/* TAB: PAYMENT MANAGEMENT */}
+        {activeTab === 'payments' && (
+          <div className="space-y-4">
+            <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h2 className="font-display text-lg font-semibold text-slate-950">
+                    Fonepay QR Payment Verification &amp; History
+                  </h2>
+                  <p className="text-xs text-slate-600">
+                    {fonepayApiConfigured
+                      ? 'Official Fonepay Merchant Verification API is configured. Verify via API or inspect receipts manually.'
+                      : 'Accounts Desk Manual Verification Mode active. Inspect uploaded receipts & Fonepay statements before verifying.'}
+                  </p>
+                </div>
+
+                <div className="relative w-full sm:w-72">
+                  <Search
+                    className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                    aria-hidden="true"
+                  />
+                  <input
+                    type="search"
+                    value={paymentSearch}
+                    onChange={(e) => setPaymentSearch(e.target.value)}
+                    placeholder="Search Pay Ref, Tx ID, patient..."
+                    className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-lg focus:outline-none focus:border-[#0F4C81]"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-1.5">
+                {(
+                  [
+                    { id: 'all', label: `All (${payments.length})` },
+                    {
+                      id: 'general',
+                      label: `General Payments (${payments.filter((p) => p.paymentCategory === 'general').length})`,
+                    },
+                    {
+                      id: 'appointment',
+                      label: `Appointment Payments (${payments.filter((p) => p.paymentCategory === 'appointment').length})`,
+                    },
+                    {
+                      id: 'pending_verification',
+                      label: `Pending (${payments.filter((p) => p.verificationStatus === 'pending_verification').length})`,
+                    },
+                    {
+                      id: 'verified',
+                      label: `Verified (${payments.filter((p) => p.verificationStatus === 'verified').length})`,
+                    },
+                    {
+                      id: 'rejected',
+                      label: `Rejected (${payments.filter((p) => p.verificationStatus === 'rejected').length})`,
+                    },
+                  ] as { id: PaymentFilter; label: string }[]
+                ).map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => setPaymentFilter(f.id)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border cursor-pointer ${
+                      paymentFilter === f.id
+                        ? 'bg-[#0F4C81] text-white border-[#0F4C81]'
+                        : 'bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100'
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+              {filteredPayments.length === 0 ? (
+                <div className="p-12 text-center text-sm text-slate-500">
+                  No payment submissions match this filter yet.
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-200">
+                  {filteredPayments.map((pay) => {
+                    const isBusy = busyPaymentId === pay.id;
+                    const isRejecting = rejectingPaymentId === pay.id;
+                    return (
+                      <div key={pay.id} className="p-4 sm:p-5 space-y-3 hover:bg-slate-50/70">
+                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                          <div className="space-y-1">
+                            <div className="flex flex-wrap items-center gap-2.5">
+                              <span className="font-mono text-xs font-bold text-[#0F4C81]">
+                                {pay.paymentRef}
+                              </span>
+                              <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[11px] font-medium capitalize">
+                                {pay.paymentCategory}
+                              </span>
+                              <span
+                                className={`px-2.5 py-0.5 rounded border text-xs font-medium ${
+                                  pay.verificationStatus === 'verified'
+                                    ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
+                                    : pay.verificationStatus === 'rejected'
+                                      ? 'bg-rose-50 text-rose-900 border-rose-200'
+                                      : 'bg-amber-50 text-amber-900 border-amber-200'
+                                }`}
+                              >
+                                {pay.verificationStatus === 'pending_verification'
+                                  ? 'Pending Verification'
+                                  : pay.verificationStatus}
+                              </span>
+                            </div>
+
+                            <div className="text-sm text-slate-900">
+                              <span className="font-display font-semibold">{pay.patientName}</span>{' '}
+                              · <span className="font-mono text-xs">{pay.mobileNumber}</span> ·{' '}
+                              <span className="font-mono font-bold text-[#0F4C81]">
+                                NPR {pay.amount.toLocaleString()}
+                              </span>
+                            </div>
+
+                            <div className="text-xs text-slate-600 font-mono">
+                              Transaction ID: <strong className="text-slate-900">{pay.transactionId}</strong>
+                              {pay.bookingId ? ` · Booking: ${pay.bookingId}` : ''}
+                              {pay.doctorName ? ` · ${pay.doctorName}` : ''}
+                              {pay.appointmentDate ? ` (${pay.appointmentDate} ${pay.timeSlot})` : ''}
+                            </div>
+
+                            <p className="text-xs text-slate-600">Purpose: {pay.purpose}</p>
+                            {pay.verifiedBy && (
+                              <p className="text-[11px] text-slate-500">
+                                Processed by {pay.verifiedBy} ({pay.verificationMode})
+                              </p>
+                            )}
+                            {pay.rejectionReason && (
+                              <p className="text-xs text-rose-700">
+                                Rejection Reason: {pay.rejectionReason}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2 shrink-0">
+                            {(pay.screenshotDataUrl || pay.screenshotUrl) && (
+                              <button
+                                type="button"
+                                onClick={() => setPreviewScreenshotPayment(pay)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-800 hover:bg-slate-50 cursor-pointer"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                                <span>View Screenshot</span>
+                              </button>
+                            )}
+
+                            {pay.verificationStatus !== 'verified' && (
+                              <>
+                                {fonepayApiConfigured && (
+                                  <button
+                                    type="button"
+                                    disabled={isBusy}
+                                    onClick={() => void handleApiVerifyPayment(pay)}
+                                    className="px-3 py-1.5 rounded-lg bg-[#0F4C81] text-white text-xs font-medium hover:bg-[#0B3A63] disabled:opacity-50 cursor-pointer"
+                                  >
+                                    Check Fonepay API
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  disabled={isBusy}
+                                  onClick={() => void handleManualVerifyPayment(pay)}
+                                  className="px-3 py-1.5 rounded-lg bg-emerald-700 text-white text-xs font-medium hover:bg-emerald-800 disabled:opacity-50 cursor-pointer"
+                                >
+                                  {pay.paymentCategory === 'appointment'
+                                    ? 'Verify & Auto-Approve Appt'
+                                    : 'Verify Payment'}
+                                </button>
+                              </>
+                            )}
+
+                            {pay.verificationStatus === 'pending_verification' && (
+                              <button
+                                type="button"
+                                disabled={isBusy}
+                                onClick={() =>
+                                  setRejectingPaymentId(isRejecting ? null : pay.id)
+                                }
+                                className="px-3 py-1.5 rounded-lg border border-rose-300 bg-rose-50 text-rose-800 text-xs font-medium hover:bg-rose-100 cursor-pointer"
+                              >
+                                Reject
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {isRejecting && (
+                          <div className="pt-2 flex flex-col sm:flex-row gap-2">
+                            <input
+                              type="text"
+                              maxLength={300}
+                              value={rejectReasonDrafts[pay.id] || ''}
+                              onChange={(e) =>
+                                setRejectReasonDrafts((prev) => ({
+                                  ...prev,
+                                  [pay.id]: e.target.value,
+                                }))
+                              }
+                              placeholder="Reason for rejecting payment (e.g. Transaction ID not settled)..."
+                              className="flex-1 px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:border-rose-500"
+                            />
+                            <button
+                              type="button"
+                              disabled={isBusy}
+                              onClick={() => void handleRejectPayment(pay)}
+                              className="px-4 py-2 rounded-lg bg-rose-700 text-white text-xs font-medium hover:bg-rose-800 cursor-pointer"
+                            >
+                              Confirm Rejection
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* TAB: REFUND MANAGEMENT */}
+        {activeTab === 'refunds' && (
+          <div className="space-y-4">
+            <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h2 className="font-display text-lg font-semibold text-slate-950">
+                  Patient Refund Requests &amp; Disbursement Log
+                </h2>
+                <p className="text-xs text-slate-600">
+                  Approve or reject eligible refund requests, then record the actual bank/Fonepay
+                  refund transaction reference before marking as Refunded.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {(['all', 'pending', 'approved', 'rejected', 'refunded'] as const).map((status) => (
+                  <button
+                    key={status}
+                    type="button"
+                    onClick={() => setRefundFilter(status)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border capitalize cursor-pointer ${
+                      refundFilter === status
+                        ? 'bg-[#0F4C81] text-white border-[#0F4C81]'
+                        : 'bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100'
+                    }`}
+                  >
+                    {status}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+              {filteredRefunds.length === 0 ? (
+                <div className="p-12 text-center text-sm text-slate-500">
+                  No refund requests match the selected filter.
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-200">
+                  {filteredRefunds.map((ref) => {
+                    const isBusy = busyRefundId === ref.id;
+                    const isMarkingRefunded = markingRefundId === ref.id;
+                    return (
+                      <div key={ref.id} className="p-4 sm:p-5 space-y-3 hover:bg-slate-50/70">
+                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                          <div className="space-y-1">
+                            <div className="flex flex-wrap items-center gap-2.5">
+                              <span className="font-mono text-xs font-bold text-[#0F4C81]">
+                                {ref.refundRef}
+                              </span>
+                              <span
+                                className={`px-2.5 py-0.5 rounded border text-xs font-medium capitalize ${
+                                  ref.status === 'refunded'
+                                    ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
+                                    : ref.status === 'approved'
+                                      ? 'bg-sky-50 text-[#0F4C81] border-sky-200'
+                                      : ref.status === 'rejected'
+                                        ? 'bg-rose-50 text-rose-900 border-rose-200'
+                                        : 'bg-amber-50 text-amber-900 border-amber-200'
+                                }`}
+                              >
+                                {ref.status}
+                              </span>
+                              <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[11px]">
+                                {ref.eligibilityType === 'hospital_cancelled'
+                                  ? 'Hospital-Cancelled (100%)'
+                                  : 'Standard >= 24h Policy'}
+                              </span>
+                            </div>
+
+                            <div className="text-sm text-slate-900">
+                              <span className="font-display font-semibold">{ref.patientName}</span> ·{' '}
+                              <span className="font-mono text-xs">{ref.mobileNumber}</span> ·{' '}
+                              <span className="font-mono font-bold text-[#0F4C81]">
+                                NPR {ref.amount.toLocaleString()}
+                              </span>
+                            </div>
+
+                            <div className="text-xs text-slate-600 font-mono">
+                              Payment Ref: {ref.paymentRef}
+                              {ref.bookingId ? ` · Booking: ${ref.bookingId}` : ''}
+                              {ref.doctorName ? ` · ${ref.doctorName}` : ''}
+                              {ref.appointmentDate ? ` (${ref.appointmentDate} ${ref.timeSlot})` : ''}
+                            </div>
+
+                            <p className="text-xs text-slate-700">Patient Reason: {ref.reason}</p>
+                            {ref.refundTxRef && (
+                              <p className="text-xs font-medium text-emerald-800">
+                                Refund Transfer Tx Ref:{' '}
+                                <span className="font-mono font-bold">{ref.refundTxRef}</span>
+                              </p>
+                            )}
+                            {ref.adminNote && (
+                              <p className="text-xs text-[#0F4C81]">Admin Note: {ref.adminNote}</p>
+                            )}
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2 shrink-0">
+                            {ref.status === 'pending' && (
+                              <>
+                                <button
+                                  type="button"
+                                  disabled={isBusy}
+                                  onClick={() => void handleRefundTransition(ref, 'approved')}
+                                  className="px-3 py-1.5 rounded-lg bg-[#0F4C81] text-white text-xs font-medium hover:bg-[#0B3A63] disabled:opacity-50 cursor-pointer"
+                                >
+                                  Approve
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={isBusy}
+                                  onClick={() => void handleRefundTransition(ref, 'rejected')}
+                                  className="px-3 py-1.5 rounded-lg border border-rose-300 bg-rose-50 text-rose-800 text-xs font-medium hover:bg-rose-100 disabled:opacity-50 cursor-pointer"
+                                >
+                                  Reject
+                                </button>
+                              </>
+                            )}
+
+                            {(ref.status === 'pending' || ref.status === 'approved') && (
+                              <button
+                                type="button"
+                                disabled={isBusy}
+                                onClick={() =>
+                                  setMarkingRefundId(isMarkingRefunded ? null : ref.id)
+                                }
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-700 text-white text-xs font-medium hover:bg-emerald-800 cursor-pointer"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5" />
+                                <span>Mark Refunded</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {isMarkingRefunded && (
+                          <div className="pt-2 grid grid-cols-1 sm:grid-cols-12 gap-2">
+                            <input
+                              type="text"
+                              required
+                              minLength={3}
+                              maxLength={100}
+                              value={refundTxDrafts[ref.id] || ''}
+                              onChange={(e) =>
+                                setRefundTxDrafts((prev) => ({
+                                  ...prev,
+                                  [ref.id]: e.target.value,
+                                }))
+                              }
+                              placeholder="Actual Bank / Fonepay Refund Tx Ref *"
+                              className="sm:col-span-5 px-3 py-2 text-xs font-mono border border-slate-300 rounded-lg focus:outline-none focus:border-emerald-600"
+                            />
+                            <input
+                              type="text"
+                              maxLength={300}
+                              value={refundNoteDrafts[ref.id] ?? ref.adminNote ?? ''}
+                              onChange={(e) =>
+                                setRefundNoteDrafts((prev) => ({
+                                  ...prev,
+                                  [ref.id]: e.target.value,
+                                }))
+                              }
+                              placeholder="Optional accounts desk note..."
+                              className="sm:col-span-5 px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:border-[#0F4C81]"
+                            />
+                            <button
+                              type="button"
+                              disabled={isBusy}
+                              onClick={() => void handleRefundTransition(ref, 'refunded')}
+                              className="sm:col-span-2 px-3 py-2 rounded-lg bg-emerald-700 text-white text-xs font-medium hover:bg-emerald-800 cursor-pointer"
+                            >
+                              Confirm Sent
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -1731,6 +2365,47 @@ export function AdminDashboard({
           </div>
         )}
       </div>
+
+      {/* Payment Screenshot Lightbox Modal */}
+      {previewScreenshotPayment && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 bg-slate-950/70 flex items-center justify-center p-4"
+        >
+          <div className="bg-white rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto border border-slate-200 p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <div>
+                <p className="text-xs text-slate-500">
+                  {previewScreenshotPayment.patientName} · NPR{' '}
+                  {previewScreenshotPayment.amount.toLocaleString()}
+                </p>
+                <h3 className="font-mono text-sm font-bold text-[#0F4C81]">
+                  {previewScreenshotPayment.paymentRef} · Tx: {previewScreenshotPayment.transactionId}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewScreenshotPayment(null)}
+                aria-label="Close screenshot preview"
+                className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-2 flex justify-center">
+              <img
+                src={
+                  previewScreenshotPayment.screenshotUrl ||
+                  previewScreenshotPayment.screenshotDataUrl
+                }
+                alt={`Payment screenshot for ${previewScreenshotPayment.paymentRef}`}
+                className="max-h-[65vh] w-auto rounded object-contain"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

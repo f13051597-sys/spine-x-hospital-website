@@ -17,6 +17,8 @@ import {
 } from './components/InfoPages';
 import { LocationSection } from './components/LocationSection';
 import { Navbar } from './components/Navbar';
+import { OnlinePaymentSection } from './components/OnlinePaymentSection';
+import { PatientDashboard } from './components/PatientDashboard';
 import { ServicesShowcase } from './components/ServicesShowcase';
 import { StatusLookupSection } from './components/StatusLookupSection';
 import { INITIAL_DEPARTMENTS, INITIAL_DOCTORS } from './data/hospitalCatalog';
@@ -31,6 +33,8 @@ function parseViewFromHash(): HospitalView {
     'departments',
     'doctors',
     'book',
+    'pay',
+    'dashboard',
     'status',
     'about',
     'contact',
@@ -128,6 +132,7 @@ export default function App() {
                 preselectedDoctorId={preselectedDoctorId}
                 preselectedDepartmentId={preselectedDepartmentId}
                 onGoToStatusCheck={handleGoToStatusCheck}
+                onOpenDashboard={() => navigate('dashboard')}
               />
               <StatusLookupSection
                 initialBookingId={statusPrefill.bookingId}
@@ -162,6 +167,21 @@ export default function App() {
               preselectedDoctorId={preselectedDoctorId}
               preselectedDepartmentId={preselectedDepartmentId}
               onGoToStatusCheck={handleGoToStatusCheck}
+              onOpenDashboard={() => navigate('dashboard')}
+            />
+          )}
+
+          {activeView === 'pay' && (
+            <OnlinePaymentSection
+              onOpenDashboard={() => navigate('dashboard')}
+              onGoToBooking={() => navigate('book')}
+            />
+          )}
+
+          {activeView === 'dashboard' && (
+            <PatientDashboard
+              onNavigateToPay={() => navigate('pay')}
+              onNavigateToBook={() => navigate('book')}
             />
           )}
 

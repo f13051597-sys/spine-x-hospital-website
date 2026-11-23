@@ -137,6 +137,7 @@ service cloud.firestore {
           'opdFee', 'appointmentDate', 'timeSlot', 'reason', 'status',
           'slotLockId', 'statusLookupId', 'adminNote',
           'reminderTiming', 'reminderChannel', 'reminderStatus',
+          'paymentMethod', 'paymentStatus', 'paymentId', 'paymentRef', 'transactionId', 'ownerUid',
           'createdAt', 'updatedAt'
         ])
         && data.bookingId is string && data.bookingId.size() == 15 && data.bookingId.matches('^SXH-[0-9]{4}-[A-Z0-9]{6}$')
@@ -159,6 +160,12 @@ service cloud.firestore {
         && (!('reminderTiming' in data) || data.reminderTiming in ['24_hours_before', '2_hours_before', 'morning_of_visit', 'none'])
         && (!('reminderChannel' in data) || data.reminderChannel in ['Calendar & Browser Alert', 'WhatsApp Desk Reminder', 'None'])
         && (!('reminderStatus' in data) || data.reminderStatus in ['pending', 'sent', 'not_needed'])
+        && (!('paymentMethod' in data) || data.paymentMethod in ['fonepay_qr', 'pay_at_desk'])
+        && (!('paymentStatus' in data) || data.paymentStatus in ['unpaid', 'pending_verification', 'verified', 'rejected'])
+        && (!('paymentId' in data) || (data.paymentId is string && data.paymentId.size() <= 128))
+        && (!('paymentRef' in data) || (data.paymentRef is string && data.paymentRef.size() <= 32))
+        && (!('transactionId' in data) || (data.transactionId is string && data.transactionId.size() <= 64))
+        && (!('ownerUid' in data) || (data.ownerUid is string && data.ownerUid.size() <= 128))
         && data.createdAt is timestamp
         && data.updatedAt is timestamp;
     }
@@ -174,6 +181,7 @@ service cloud.firestore {
           'doctorName', 'opdFee', 'appointmentDate', 'timeSlot',
           'status', 'adminNote',
           'reminderTiming', 'reminderChannel', 'reminderStatus',
+          'paymentMethod', 'paymentStatus', 'paymentId', 'paymentRef', 'transactionId',
           'updatedAt'
         ])
         && data.bookingId is string && data.bookingId.size() == 15 && data.bookingId.matches('^SXH-[0-9]{4}-[A-Z0-9]{6}$')
@@ -189,7 +197,179 @@ service cloud.firestore {
         && (!('reminderTiming' in data) || data.reminderTiming in ['24_hours_before', '2_hours_before', 'morning_of_visit', 'none'])
         && (!('reminderChannel' in data) || data.reminderChannel in ['Calendar & Browser Alert', 'WhatsApp Desk Reminder', 'None'])
         && (!('reminderStatus' in data) || data.reminderStatus in ['pending', 'sent', 'not_needed'])
+        && (!('paymentMethod' in data) || data.paymentMethod in ['fonepay_qr', 'pay_at_desk'])
+        && (!('paymentStatus' in data) || data.paymentStatus in ['unpaid', 'pending_verification', 'verified', 'rejected'])
+        && (!('paymentId' in data) || (data.paymentId is string && data.paymentId.size() <= 128))
+        && (!('paymentRef' in data) || (data.paymentRef is string && data.paymentRef.size() <= 32))
+        && (!('transactionId' in data) || (data.transactionId is string && data.transactionId.size() <= 64))
         && data.updatedAt is timestamp;
+    }
+
+    function isValidPayment(data) {
+      return data.keys().hasAll([
+          'paymentRef', 'paymentCategory', 'paymentMethod', 'patientName', 'mobileNumber',
+          'amount', 'transactionId', 'txLockId', 'purpose', 'bookingId', 'appointmentId',
+          'doctorName', 'departmentName', 'appointmentDate', 'timeSlot',
+          'screenshotDataUrl', 'screenshotUrl', 'verificationStatus', 'verificationMode',
+          'verifiedBy', 'rejectionReason', 'ownerUid', 'portalLookupId', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'paymentRef', 'paymentCategory', 'paymentMethod', 'patientName', 'mobileNumber',
+          'amount', 'transactionId', 'txLockId', 'purpose', 'bookingId', 'appointmentId',
+          'doctorName', 'departmentName', 'appointmentDate', 'timeSlot',
+          'screenshotDataUrl', 'screenshotUrl', 'verificationStatus', 'verificationMode',
+          'verifiedBy', 'rejectionReason', 'ownerUid', 'portalLookupId', 'createdAt', 'updatedAt', 'verifiedAt'
+        ])
+        && data.paymentRef is string && data.paymentRef.matches('^PAY-[0-9]{4}-[A-Z0-9]{6}$')
+        && data.paymentCategory in ['general', 'appointment']
+        && data.paymentMethod in ['fonepay_qr', 'pay_at_desk']
+        && data.patientName is string && data.patientName.size() >= 2 && data.patientName.size() <= 100
+        && data.mobileNumber is string && data.mobileNumber.matches('^[0-9]{7,15}$')
+        && data.amount is number && data.amount >= 10 && data.amount <= 500000
+        && data.transactionId is string && data.transactionId.matches('^[A-Z0-9._\\-]{4,64}$')
+        && isValidSha256Id(data.txLockId)
+        && data.purpose is string && data.purpose.size() <= 250
+        && data.bookingId is string && (data.bookingId == '' || data.bookingId.matches('^SXH-[0-9]{4}-[A-Z0-9]{6}$'))
+        && data.appointmentId is string && data.appointmentId.size() <= 128
+        && data.doctorName is string && data.doctorName.size() <= 100
+        && data.departmentName is string && data.departmentName.size() <= 100
+        && data.appointmentDate is string && (data.appointmentDate == '' || isValidDateString(data.appointmentDate))
+        && data.timeSlot is string && data.timeSlot.size() <= 20
+        && data.screenshotDataUrl is string && data.screenshotDataUrl.size() >= 20 && data.screenshotDataUrl.size() <= 220000
+        && data.screenshotUrl is string && data.screenshotUrl.size() <= 600
+        && data.verificationStatus in ['pending_verification', 'verified', 'rejected']
+        && data.verificationMode in ['manual_pending', 'manual_admin', 'fonepay_api']
+        && data.verifiedBy is string && data.verifiedBy.size() <= 160
+        && data.rejectionReason is string && data.rejectionReason.size() <= 300
+        && data.ownerUid is string && data.ownerUid.size() <= 128
+        && isValidSha256Id(data.portalLookupId)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && (!('verifiedAt' in data) || data.verifiedAt is timestamp);
+    }
+
+    function isValidPaymentTxLock(data) {
+      return data.keys().hasAll(['transactionId', 'paymentId', 'paymentRef', 'createdAt'])
+        && data.keys().hasOnly(['transactionId', 'paymentId', 'paymentRef', 'createdAt'])
+        && data.transactionId is string && data.transactionId.matches('^[A-Z0-9._\\-]{4,64}$')
+        && isValidId(data.paymentId)
+        && data.paymentRef is string && data.paymentRef.matches('^PAY-[0-9]{4}-[A-Z0-9]{6}$')
+        && data.createdAt is timestamp;
+    }
+
+    function isValidPaymentPortal(data) {
+      return data.keys().hasAll([
+          'paymentId', 'paymentRef', 'paymentCategory', 'patientInitials', 'amount',
+          'transactionId', 'purpose', 'bookingId', 'appointmentId', 'doctorName',
+          'departmentName', 'appointmentDate', 'timeSlot', 'screenshotDataUrl',
+          'screenshotUrl', 'verificationStatus', 'rejectionReason', 'createdAtIso', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'paymentId', 'paymentRef', 'paymentCategory', 'patientInitials', 'amount',
+          'transactionId', 'purpose', 'bookingId', 'appointmentId', 'doctorName',
+          'departmentName', 'appointmentDate', 'timeSlot', 'screenshotDataUrl',
+          'screenshotUrl', 'verificationStatus', 'rejectionReason', 'createdAtIso', 'updatedAt', 'verifiedAt'
+        ])
+        && isValidId(data.paymentId)
+        && data.paymentRef is string && data.paymentRef.matches('^PAY-[0-9]{4}-[A-Z0-9]{6}$')
+        && data.paymentCategory in ['general', 'appointment']
+        && data.patientInitials is string && data.patientInitials.size() >= 1 && data.patientInitials.size() <= 10
+        && data.amount is number && data.amount >= 10 && data.amount <= 500000
+        && data.transactionId is string && data.transactionId.matches('^[A-Z0-9._\\-]{4,64}$')
+        && data.purpose is string && data.purpose.size() <= 250
+        && data.bookingId is string && data.bookingId.size() <= 32
+        && data.appointmentId is string && data.appointmentId.size() <= 128
+        && data.doctorName is string && data.doctorName.size() <= 100
+        && data.departmentName is string && data.departmentName.size() <= 100
+        && data.appointmentDate is string && data.appointmentDate.size() <= 10
+        && data.timeSlot is string && data.timeSlot.size() <= 20
+        && data.screenshotDataUrl is string && data.screenshotDataUrl.size() >= 20 && data.screenshotDataUrl.size() <= 220000
+        && data.screenshotUrl is string && data.screenshotUrl.size() <= 600
+        && data.verificationStatus in ['pending_verification', 'verified', 'rejected']
+        && data.rejectionReason is string && data.rejectionReason.size() <= 300
+        && data.createdAtIso is string && data.createdAtIso.size() <= 40
+        && data.updatedAt is timestamp
+        && (!('verifiedAt' in data) || data.verifiedAt is timestamp);
+    }
+
+    function isValidRefund(data) {
+      return data.keys().hasAll([
+          'refundRef', 'paymentId', 'paymentRef', 'bookingId', 'appointmentId',
+          'patientName', 'mobileNumber', 'doctorName', 'departmentName',
+          'appointmentDate', 'timeSlot', 'amount', 'reason', 'eligibilityType',
+          'status', 'refundTxRef', 'adminNote', 'processedBy', 'ownerUid',
+          'portalLookupId', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'refundRef', 'paymentId', 'paymentRef', 'bookingId', 'appointmentId',
+          'patientName', 'mobileNumber', 'doctorName', 'departmentName',
+          'appointmentDate', 'timeSlot', 'amount', 'reason', 'eligibilityType',
+          'status', 'refundTxRef', 'adminNote', 'processedBy', 'ownerUid',
+          'portalLookupId', 'createdAt', 'updatedAt', 'refundedAt'
+        ])
+        && data.refundRef is string && data.refundRef.matches('^REF-[0-9]{4}-[A-Z0-9]{6}$')
+        && isValidId(data.paymentId)
+        && data.paymentRef is string && data.paymentRef.matches('^PAY-[0-9]{4}-[A-Z0-9]{6}$')
+        && data.bookingId is string && data.bookingId.size() <= 32
+        && data.appointmentId is string && data.appointmentId.size() <= 128
+        && data.patientName is string && data.patientName.size() >= 1 && data.patientName.size() <= 100
+        && data.mobileNumber is string && data.mobileNumber.matches('^[0-9]{7,15}$')
+        && data.doctorName is string && data.doctorName.size() <= 100
+        && data.departmentName is string && data.departmentName.size() <= 100
+        && data.appointmentDate is string && data.appointmentDate.size() <= 10
+        && data.timeSlot is string && data.timeSlot.size() <= 20
+        && data.amount is number && data.amount >= 10 && data.amount <= 500000
+        && data.reason is string && data.reason.size() >= 5 && data.reason.size() <= 500
+        && data.eligibilityType in ['standard_24h', 'hospital_cancelled']
+        && data.status in ['pending', 'approved', 'rejected', 'refunded']
+        && data.refundTxRef is string && data.refundTxRef.size() <= 100
+        && data.adminNote is string && data.adminNote.size() <= 300
+        && data.processedBy is string && data.processedBy.size() <= 160
+        && data.ownerUid is string && data.ownerUid.size() <= 128
+        && isValidSha256Id(data.portalLookupId)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && (!('refundedAt' in data) || data.refundedAt is timestamp);
+    }
+
+    function isValidRefundLock(data) {
+      return data.keys().hasAll(['paymentId', 'refundId', 'createdAt'])
+        && data.keys().hasOnly(['paymentId', 'refundId', 'createdAt'])
+        && isValidId(data.paymentId)
+        && isValidId(data.refundId)
+        && data.createdAt is timestamp;
+    }
+
+    function isValidRefundPortal(data) {
+      return data.keys().hasAll([
+          'refundId', 'refundRef', 'paymentId', 'paymentRef', 'bookingId',
+          'doctorName', 'appointmentDate', 'timeSlot', 'amount', 'reason',
+          'eligibilityType', 'status', 'refundTxRef', 'adminNote',
+          'createdAtIso', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'refundId', 'refundRef', 'paymentId', 'paymentRef', 'bookingId',
+          'doctorName', 'appointmentDate', 'timeSlot', 'amount', 'reason',
+          'eligibilityType', 'status', 'refundTxRef', 'adminNote',
+          'createdAtIso', 'updatedAt', 'refundedAt'
+        ])
+        && isValidId(data.refundId)
+        && data.refundRef is string && data.refundRef.matches('^REF-[0-9]{4}-[A-Z0-9]{6}$')
+        && isValidId(data.paymentId)
+        && data.paymentRef is string && data.paymentRef.matches('^PAY-[0-9]{4}-[A-Z0-9]{6}$')
+        && data.bookingId is string && data.bookingId.size() <= 32
+        && data.doctorName is string && data.doctorName.size() <= 100
+        && data.appointmentDate is string && data.appointmentDate.size() <= 10
+        && data.timeSlot is string && data.timeSlot.size() <= 20
+        && data.amount is number && data.amount >= 10 && data.amount <= 500000
+        && data.reason is string && data.reason.size() >= 5 && data.reason.size() <= 500
+        && data.eligibilityType in ['standard_24h', 'hospital_cancelled']
+        && data.status in ['pending', 'approved', 'rejected', 'refunded']
+        && data.refundTxRef is string && data.refundTxRef.size() <= 100
+        && data.adminNote is string && data.adminNote.size() <= 300
+        && data.createdAtIso is string && data.createdAtIso.size() <= 40
+        && data.updatedAt is timestamp
+        && (!('refundedAt' in data) || data.refundedAt is timestamp);
     }
 
     function isValidFeedback(data) {
@@ -244,12 +424,15 @@ service cloud.firestore {
     }
 
     match /appointments/{appointmentId} {
-      allow get: if isAdmin() && isValidId(appointmentId);
-      allow list: if isAdmin();
+      allow get: if isValidId(appointmentId) && (isAdmin() || (isSignedIn() && resource.data.ownerUid == request.auth.uid));
+      allow list: if isAdmin() || (isSignedIn() && resource.data.ownerUid == request.auth.uid);
       allow create: if isValidId(appointmentId)
         && isValidAppointment(incoming())
         && incoming().status == 'pending'
         && incoming().adminNote == ''
+        && (!('paymentStatus' in incoming()) || incoming().paymentStatus in ['unpaid', 'pending_verification'])
+        && (!('ownerUid' in incoming()) || incoming().ownerUid == '' || (isSignedIn() && incoming().ownerUid == request.auth.uid))
+        && (!('paymentId' in incoming()) || incoming().paymentId == '' || existsAfter(/databases/$(database)/documents/payments/$(incoming().paymentId)))
         && incoming().slotLockId == expectedSlotLockId(incoming().doctorId, incoming().appointmentDate, incoming().timeSlot)
         && incoming().createdAt == request.time
         && incoming().updatedAt == request.time
@@ -265,7 +448,7 @@ service cloud.firestore {
         && incoming().slotLockId == existing().slotLockId
         && incoming().statusLookupId == existing().statusLookupId
         && incoming().updatedAt == request.time
-        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'adminNote', 'reminderStatus', 'updatedAt']);
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'adminNote', 'reminderStatus', 'paymentStatus', 'updatedAt']);
       allow delete: if isAdmin() && isValidId(appointmentId);
     }
 
@@ -276,6 +459,7 @@ service cloud.firestore {
         && isValidAppointmentStatus(incoming())
         && incoming().status == 'pending'
         && incoming().adminNote == ''
+        && (!('paymentStatus' in incoming()) || incoming().paymentStatus in ['unpaid', 'pending_verification'])
         && incoming().updatedAt == request.time
         && existsAfter(/databases/$(database)/documents/appointments/$(incoming().appointmentId));
       allow update: if isAdmin()
@@ -284,8 +468,140 @@ service cloud.firestore {
         && incoming().bookingId == existing().bookingId
         && incoming().appointmentId == existing().appointmentId
         && incoming().updatedAt == request.time
-        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'adminNote', 'reminderStatus', 'updatedAt']);
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'adminNote', 'reminderStatus', 'paymentStatus', 'updatedAt']);
       allow delete: if isAdmin() && isValidSha256Id(lookupId);
+    }
+
+    match /payments/{paymentId} {
+      allow get: if isValidId(paymentId) && (isAdmin() || (isSignedIn() && resource.data.ownerUid == request.auth.uid));
+      allow list: if isAdmin() || (isSignedIn() && resource.data.ownerUid == request.auth.uid);
+      allow create: if isValidId(paymentId)
+        && isValidPayment(incoming())
+        && incoming().verificationStatus == 'pending_verification'
+        && incoming().verificationMode == 'manual_pending'
+        && incoming().verifiedBy == ''
+        && incoming().rejectionReason == ''
+        && !('verifiedAt' in incoming())
+        && (incoming().ownerUid == '' || (isSignedIn() && incoming().ownerUid == request.auth.uid))
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && existsAfter(/databases/$(database)/documents/paymentTxLocks/$(incoming().txLockId))
+        && existsAfter(/databases/$(database)/documents/paymentPortals/$(incoming().portalLookupId))
+        && (incoming().paymentCategory == 'general' || (incoming().appointmentId != '' && existsAfter(/databases/$(database)/documents/appointments/$(incoming().appointmentId))));
+      allow update: if isAdmin()
+        && isValidId(paymentId)
+        && isValidPayment(incoming())
+        && incoming().paymentRef == existing().paymentRef
+        && incoming().transactionId == existing().transactionId
+        && incoming().txLockId == existing().txLockId
+        && incoming().portalLookupId == existing().portalLookupId
+        && incoming().amount == existing().amount
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['verificationStatus', 'verificationMode', 'verifiedBy', 'rejectionReason', 'verifiedAt', 'updatedAt']);
+      allow delete: if isAdmin() && isValidId(paymentId);
+    }
+
+    match /paymentTxLocks/{txLockId} {
+      allow get: if isValidSha256Id(txLockId);
+      allow list: if isAdmin();
+      allow create: if isValidSha256Id(txLockId)
+        && isValidPaymentTxLock(incoming())
+        && incoming().createdAt == request.time
+        && existsAfter(/databases/$(database)/documents/payments/$(incoming().paymentId));
+      allow update: if false;
+      allow delete: if isAdmin() && isValidSha256Id(txLockId);
+    }
+
+    match /paymentPortals/{portalLookupId} {
+      allow get: if isValidSha256Id(portalLookupId);
+      allow list: if isAdmin();
+      allow create: if isValidSha256Id(portalLookupId)
+        && isValidPaymentPortal(incoming())
+        && incoming().verificationStatus == 'pending_verification'
+        && incoming().rejectionReason == ''
+        && !('verifiedAt' in incoming())
+        && incoming().updatedAt == request.time
+        && existsAfter(/databases/$(database)/documents/payments/$(incoming().paymentId));
+      allow update: if isAdmin()
+        && isValidSha256Id(portalLookupId)
+        && isValidPaymentPortal(incoming())
+        && incoming().paymentId == existing().paymentId
+        && incoming().paymentRef == existing().paymentRef
+        && incoming().transactionId == existing().transactionId
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['verificationStatus', 'rejectionReason', 'verifiedAt', 'updatedAt']);
+      allow delete: if isAdmin() && isValidSha256Id(portalLookupId);
+    }
+
+    match /refunds/{refundId} {
+      allow get: if isValidId(refundId) && (isAdmin() || (isSignedIn() && resource.data.ownerUid == request.auth.uid));
+      allow list: if isAdmin() || (isSignedIn() && resource.data.ownerUid == request.auth.uid);
+      allow create: if isValidId(refundId)
+        && isValidRefund(incoming())
+        && incoming().status == 'pending'
+        && incoming().refundTxRef == ''
+        && incoming().adminNote == ''
+        && incoming().processedBy == ''
+        && !('refundedAt' in incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && exists(/databases/$(database)/documents/payments/$(incoming().paymentId))
+        && get(/databases/$(database)/documents/payments/$(incoming().paymentId)).data.verificationStatus == 'verified'
+        && incoming().paymentRef == get(/databases/$(database)/documents/payments/$(incoming().paymentId)).data.paymentRef
+        && incoming().amount <= get(/databases/$(database)/documents/payments/$(incoming().paymentId)).data.amount
+        && (
+          (isSignedIn() && incoming().ownerUid == request.auth.uid && get(/databases/$(database)/documents/payments/$(incoming().paymentId)).data.ownerUid == request.auth.uid)
+          || incoming().portalLookupId == get(/databases/$(database)/documents/payments/$(incoming().paymentId)).data.portalLookupId
+        )
+        && existsAfter(/databases/$(database)/documents/refundLocks/$(incoming().paymentId))
+        && existsAfter(/databases/$(database)/documents/refundPortals/$(incoming().portalLookupId));
+      allow update: if isAdmin()
+        && isValidId(refundId)
+        && isValidRefund(incoming())
+        && incoming().refundRef == existing().refundRef
+        && incoming().paymentId == existing().paymentId
+        && incoming().paymentRef == existing().paymentRef
+        && incoming().amount == existing().amount
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'refundTxRef', 'adminNote', 'processedBy', 'refundedAt', 'updatedAt'])
+        && (incoming().status != 'refunded' || (incoming().refundTxRef.size() >= 3 && 'refundedAt' in incoming() && incoming().refundedAt == request.time));
+      allow delete: if isAdmin() && isValidId(refundId);
+    }
+
+    match /refundLocks/{paymentId} {
+      allow get: if isValidId(paymentId);
+      allow list: if isAdmin();
+      allow create: if isValidId(paymentId)
+        && isValidRefundLock(incoming())
+        && incoming().paymentId == paymentId
+        && incoming().createdAt == request.time
+        && existsAfter(/databases/$(database)/documents/refunds/$(incoming().refundId));
+      allow update: if false;
+      allow delete: if isAdmin() && isValidId(paymentId);
+    }
+
+    match /refundPortals/{portalLookupId} {
+      allow get: if isValidSha256Id(portalLookupId);
+      allow list: if isAdmin();
+      allow create: if isValidSha256Id(portalLookupId)
+        && isValidRefundPortal(incoming())
+        && incoming().status == 'pending'
+        && incoming().refundTxRef == ''
+        && incoming().adminNote == ''
+        && !('refundedAt' in incoming())
+        && incoming().updatedAt == request.time
+        && existsAfter(/databases/$(database)/documents/refunds/$(incoming().refundId));
+      allow update: if isAdmin()
+        && isValidSha256Id(portalLookupId)
+        && isValidRefundPortal(incoming())
+        && incoming().refundId == existing().refundId
+        && incoming().paymentId == existing().paymentId
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'refundTxRef', 'adminNote', 'refundedAt', 'updatedAt'])
+        && (incoming().status != 'refunded' || (incoming().refundTxRef.size() >= 3 && 'refundedAt' in incoming() && incoming().refundedAt == request.time));
+      allow delete: if isAdmin() && isValidSha256Id(portalLookupId);
     }
 
     match /feedback/{feedbackId} {

@@ -26,6 +26,16 @@ const VIEW_SEO: Record<HospitalView, ViewSeoConfig> = {
     description:
       'Reserve a confirmed OPD slot with specialist doctors at Spine X Superspeciality Hospital & Trauma Center, Bhagwan Chowk, Birtamode-3, Jhapa.',
   },
+  pay: {
+    title: 'Online Fonepay QR Payment | Spine X Hospital Birtamode',
+    description:
+      'Pay hospital bills, lab, pharmacy, or OPD fees securely via Spine X Hospital’s official Fonepay QR and submit your transaction verification.',
+  },
+  dashboard: {
+    title: 'Patient Dashboard & Refunds | Spine X Hospital',
+    description:
+      'View your Spine X Hospital appointments, payment history, transaction details, and refund request status securely.',
+  },
   status: {
     title: 'Check Appointment Status | Spine X Hospital',
     description:

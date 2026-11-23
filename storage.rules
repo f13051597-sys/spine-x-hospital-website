@@ -1,0 +1,38 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isVerifiedUser() && request.auth.token.email == 'f13051597@gmail.com';
+    }
+
+    function isValidReceiptFileId(fileId) {
+      return fileId is string
+        && fileId.size() >= 6
+        && fileId.size() <= 140
+        && fileId.matches('^[a-zA-Z0-9_\\-]+\\.(jpg|jpeg|png|webp)$');
+    }
+
+    match /payment-screenshots/{fileId} {
+      allow read: if isAdmin() || (isVerifiedUser() && resource.metadata.ownerUid == request.auth.uid);
+      allow create: if isValidReceiptFileId(fileId)
+        && request.resource.size > 0
+        && request.resource.size <= 5 * 1024 * 1024
+        && request.resource.contentType.matches('^image/(jpeg|png|webp)$')
+        && (!('ownerUid' in request.resource.metadata) || request.resource.metadata.ownerUid == '' || (isVerifiedUser() && request.resource.metadata.ownerUid == request.auth.uid));
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+  }
+}

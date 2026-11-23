@@ -17,6 +17,15 @@ export const HOSPITAL_INFO = {
     'https://maps.google.com/maps?q=Birtamode,+Jhapa,+Nepal&t=&z=14&ie=UTF8&iwloc=&output=embed',
 } as const;
 
+export const FONEPAY_MERCHANT_INFO = {
+  qrImageUrl: '/assets/aistudio/IMG_0039_e983f86c.jpeg',
+  merchantName: 'SPINE X. SUPERSPECIALITY HOSPITAL AND TRAUMA CENTER PRIVATE LIMITED',
+  terminalId: '2222050014357399',
+  branch: 'BIRTAMOD',
+  acquiredBy: 'Siddhartha Bank',
+  supportedNetworks: ['Fonepay', 'UPI', 'Alipay+', 'UnionPay'],
+} as const;
+
 export const HOSPITAL_PHOTOS = [
   {
     id: 'hospital-building',
