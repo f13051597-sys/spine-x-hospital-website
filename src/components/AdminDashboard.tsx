@@ -15,17 +15,21 @@ import {
 } from 'firebase/firestore';
 import {
   AlertCircle,
+  Bell,
   Calendar,
   Check,
   CheckCircle2,
   Clock,
+  ImagePlus,
   Loader2,
   LogOut,
+  MessageCircle,
   Plus,
   RefreshCw,
   Search,
   ShieldAlert,
   ShieldCheck,
+  Star,
   Trash2,
   UserPlus,
   X,
@@ -34,10 +38,13 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { DEFAULT_OPD_SLOTS } from '../data/hospitalCatalog';
 import { auth, db, googleProvider, handleFirestoreError, OperationType } from '../lib/firebase';
 import {
+  adminDeleteFeedback,
+  adminToggleFeedbackPublish,
   removeDepartment,
   removeDoctor,
   sanitizeSlugId,
   seedCatalogIfEmpty,
+  syncOfficialCatalogToFirestore,
   updateAppointmentStatus,
   upsertDepartment,
   upsertDoctor,
@@ -47,7 +54,9 @@ import type {
   AppointmentStatusValue,
   Department,
   Doctor,
+  PatientFeedback,
 } from '../types/hospital';
+import { buildWhatsAppReminderHref, REMINDER_TIMING_LABELS } from '../utils/reminderUtils';
 
 interface AdminDashboardProps {
   departments: Department[];
@@ -55,7 +64,7 @@ interface AdminDashboardProps {
   onCatalogUpdated: () => Promise<void>;
 }
 
-type AdminTab = 'appointments' | 'doctors' | 'departments' | 'access';
+type AdminTab = 'appointments' | 'doctors' | 'departments' | 'feedback' | 'access';
 
 function getTodayPrefix(): { today: string; month: string } {
   const now = new Date();
@@ -73,6 +82,43 @@ const STATUS_BADGE_MAP: Record<AppointmentStatusValue, string> = {
   cancelled: 'bg-slate-100 text-slate-700 border-slate-300',
 };
 
+async function compressDoctorPhotoFile(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Could not read the selected image file.'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('Invalid image file selected.'));
+      img.onload = () => {
+        const size = 360;
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Canvas image processing unavailable.'));
+          return;
+        }
+        ctx.fillStyle = '#f8fafc';
+        ctx.fillRect(0, 0, size, size);
+        // Center-crop square covering top portrait area
+        const minSide = Math.min(img.width, img.height);
+        const sx = (img.width - minSide) / 2;
+        const sy = Math.max(0, (img.height - minSide) * 0.2);
+        ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, size, size);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        if (dataUrl.length > 145000) {
+          resolve(canvas.toDataURL('image/jpeg', 0.65));
+        } else {
+          resolve(dataUrl);
+        }
+      };
+      img.src = String(reader.result);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 export function AdminDashboard({
   departments,
   doctors,
@@ -85,6 +131,7 @@ export function AdminDashboard({
 
   const [activeTab, setActiveTab] = useState<AdminTab>('appointments');
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [feedbackItems, setFeedbackItems] = useState<PatientFeedback[]>([]);
   const [loadingAppointments, setLoadingAppointments] = useState(false);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -93,7 +140,9 @@ export function AdminDashboard({
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFilter, setDateFilter] = useState('');
   const [doctorFilter, setDoctorFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState<'all' | AppointmentStatusValue>('all');
+  const [statusFilter, setStatusFilter] = useState<
+    'all' | 'due_reminders' | AppointmentStatusValue
+  >('all');
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState('');
   const [updatingApptId, setUpdatingApptId] = useState<string | null>(null);
@@ -103,6 +152,7 @@ export function AdminDashboard({
   const [isAddingDoctor, setIsAddingDoctor] = useState(false);
   const [newSlotInput, setNewSlotInput] = useState('');
   const [savingDoctor, setSavingDoctor] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   // Department editor state
   const [editingDept, setEditingDept] = useState<Department | null>(null);
@@ -124,10 +174,11 @@ export function AdminDashboard({
     return () => unsub();
   }, []);
 
-  // Attach real-time appointments listener ONLY when authenticated
+  // Attach real-time appointments + feedback listeners ONLY when authenticated
   useEffect(() => {
     if (!user) {
       setAppointments([]);
+      setFeedbackItems([]);
       return;
     }
 
@@ -136,7 +187,7 @@ export function AdminDashboard({
     setUnauthorized(false);
 
     const apptQuery = query(collection(db, 'appointments'), orderBy('createdAt', 'desc'));
-    const unsub = onSnapshot(
+    const unsubAppts = onSnapshot(
       apptQuery,
       async (snapshot) => {
         if (cancelled) return;
@@ -148,7 +199,6 @@ export function AdminDashboard({
         setLoadingAppointments(false);
         setUnauthorized(false);
 
-        // Ensure baseline catalog exists in Firestore for admin editing
         try {
           const seeded = await seedCatalogIfEmpty();
           if (seeded && !cancelled) {
@@ -170,9 +220,27 @@ export function AdminDashboard({
       }
     );
 
+    const fbQuery = query(collection(db, 'feedback'), orderBy('createdAt', 'desc'));
+    const unsubFb = onSnapshot(
+      fbQuery,
+      (snapshot) => {
+        if (cancelled) return;
+        setFeedbackItems(
+          snapshot.docs.map((d) => ({
+            id: d.id,
+            ...(d.data() as Omit<PatientFeedback, 'id'>),
+          }))
+        );
+      },
+      (err) => {
+        console.warn('Admin feedback listener warning:', err);
+      }
+    );
+
     return () => {
       cancelled = true;
-      unsub();
+      unsubAppts();
+      unsubFb();
     };
   }, [user, onCatalogUpdated]);
 
@@ -181,9 +249,7 @@ export function AdminDashboard({
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (err) {
-      setAuthError(
-        err instanceof Error ? err.message : 'Unable to complete Google Sign-In.'
-      );
+      setAuthError(err instanceof Error ? err.message : 'Unable to complete Google Sign-In.');
     }
   };
 
@@ -198,9 +264,12 @@ export function AdminDashboard({
     const todayCount = appointments.filter((a) => a.appointmentDate === today).length;
     const monthCount = appointments.filter((a) => a.appointmentDate.startsWith(month)).length;
     const pendingCount = appointments.filter((a) => a.status === 'pending').length;
-    const activeConfirmed = appointments.filter(
-      (a) => a.status === 'approved' || a.status === 'completed'
-    );
+    const dueRemindersCount = appointments.filter(
+      (a) =>
+        (a.status === 'pending' || a.status === 'approved') &&
+        a.reminderStatus === 'pending' &&
+        a.appointmentDate >= today
+    ).length;
     const monthRevenue = appointments
       .filter(
         (a) =>
@@ -213,7 +282,7 @@ export function AdminDashboard({
       todayCount,
       monthCount,
       pendingCount,
-      confirmedCount: activeConfirmed.length,
+      dueRemindersCount,
       monthRevenue,
     };
   }, [appointments, today, month]);
@@ -223,7 +292,19 @@ export function AdminDashboard({
     return appointments.filter((appt) => {
       if (dateFilter && appt.appointmentDate !== dateFilter) return false;
       if (doctorFilter !== 'all' && appt.doctorId !== doctorFilter) return false;
-      if (statusFilter !== 'all' && appt.status !== statusFilter) return false;
+      if (statusFilter === 'due_reminders') {
+        if (
+          !(
+            (appt.status === 'pending' || appt.status === 'approved') &&
+            appt.reminderStatus === 'pending' &&
+            appt.appointmentDate >= today
+          )
+        ) {
+          return false;
+        }
+      } else if (statusFilter !== 'all' && appt.status !== statusFilter) {
+        return false;
+      }
       if (!q) return true;
       return (
         appt.patientName.toLowerCase().includes(q) ||
@@ -231,12 +312,13 @@ export function AdminDashboard({
         appt.bookingId.toLowerCase().includes(q)
       );
     });
-  }, [appointments, searchQuery, dateFilter, doctorFilter, statusFilter]);
+  }, [appointments, searchQuery, dateFilter, doctorFilter, statusFilter, today]);
 
   const handleStatusChange = async (
     appt: Appointment,
     nextStatus: AppointmentStatusValue,
-    customNote?: string
+    customNote?: string,
+    nextReminderStatus?: 'pending' | 'sent' | 'not_needed'
   ) => {
     setActionError(null);
     setActionMsg(null);
@@ -245,14 +327,36 @@ export function AdminDashboard({
       await updateAppointmentStatus(
         appt,
         nextStatus,
-        customNote !== undefined ? customNote : appt.adminNote
+        customNote !== undefined ? customNote : appt.adminNote,
+        nextReminderStatus
       );
       setEditingNoteId(null);
-      setActionMsg(`Appointment ${appt.bookingId} updated to ${nextStatus}.`);
+      setActionMsg(
+        nextReminderStatus === 'sent'
+          ? `Marked appointment reminder as sent for ${appt.bookingId}.`
+          : `Appointment ${appt.bookingId} updated to ${nextStatus}.`
+      );
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Failed to update appointment.');
     } finally {
       setUpdatingApptId(null);
+    }
+  };
+
+  const handlePhotoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingDoctor) return;
+    setActionError(null);
+    setUploadingPhoto(true);
+    try {
+      const compressedDataUrl = await compressDoctorPhotoFile(file);
+      setEditingDoctor({ ...editingDoctor, photoUrl: compressedDataUrl });
+    } catch (err) {
+      setActionError(
+        err instanceof Error ? err.message : 'Could not process doctor portrait image.'
+      );
+    } finally {
+      setUploadingPhoto(false);
     }
   };
 
@@ -372,7 +476,7 @@ export function AdminDashboard({
             </h1>
             <p className="text-sm text-slate-600 leading-relaxed">
               Sign in with an authorized Google account to manage patient appointments, consultant
-              OPD fees, booking time slots, and departments.
+              photos &amp; OPD fees, appointment reminders, patient feedback, and departments.
             </p>
           </div>
 
@@ -435,9 +539,7 @@ export function AdminDashboard({
         {/* Top Admin Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-200">
           <div>
-            <p className="text-xs text-slate-500">
-              Admin Console / {user.email}
-            </p>
+            <p className="text-xs text-slate-500">Admin Console / {user.email}</p>
             <h1 className="font-display text-2xl sm:text-3xl font-bold text-slate-950 mt-1">
               Hospital Operations &amp; Appointments
             </h1>
@@ -447,14 +549,23 @@ export function AdminDashboard({
             <button
               type="button"
               onClick={async () => {
-                await seedCatalogIfEmpty();
-                await onCatalogUpdated();
-                setActionMsg('Synchronized catalog with Firestore.');
+                setActionError(null);
+                try {
+                  await syncOfficialCatalogToFirestore();
+                  await onCatalogUpdated();
+                  setActionMsg(
+                    'Synchronized official departments, doctors, and portraits to Firestore.'
+                  );
+                } catch (err) {
+                  setActionError(
+                    err instanceof Error ? err.message : 'Unable to synchronize catalog.'
+                  );
+                }
               }}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer whitespace-nowrap shrink-0"
             >
               <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
-              <span>Sync Catalog</span>
+              <span>Sync Official Catalog</span>
             </button>
             <button
               type="button"
@@ -494,11 +605,11 @@ export function AdminDashboard({
           </div>
 
           <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <div className="text-xs text-slate-500">Approved / Done</div>
+            <div className="text-xs text-slate-500">Reminders Queue</div>
             <div className="font-mono tabular-nums text-2xl font-bold text-emerald-700 mt-1">
-              {stats.confirmedCount}
+              {stats.dueRemindersCount}
             </div>
-            <div className="text-xs text-slate-600 mt-0.5">Confirmed Visits</div>
+            <div className="text-xs text-slate-600 mt-0.5">Upcoming Pending Alerts</div>
           </div>
 
           <div className="col-span-2 lg:col-span-1 bg-white border border-slate-200 rounded-xl p-4">
@@ -517,6 +628,7 @@ export function AdminDashboard({
               { id: 'appointments', label: `Appointments (${appointments.length})` },
               { id: 'doctors', label: `Doctors (${doctors.length})` },
               { id: 'departments', label: `Departments (${departments.length})` },
+              { id: 'feedback', label: `Feedback (${feedbackItems.length})` },
               { id: 'access', label: 'Admin Access' },
             ] as { id: AdminTab; label: string }[]
           ).map((tab) => (
@@ -559,7 +671,7 @@ export function AdminDashboard({
           </div>
         )}
 
-        {/* TAB 1: APPOINTMENTS */}
+        {/* TAB 1: APPOINTMENTS & REMINDERS */}
         {activeTab === 'appointments' && (
           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
             <div className="p-4 sm:p-5 border-b border-slate-200 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -609,12 +721,15 @@ export function AdminDashboard({
                 <select
                   value={statusFilter}
                   onChange={(e) =>
-                    setStatusFilter(e.target.value as 'all' | AppointmentStatusValue)
+                    setStatusFilter(
+                      e.target.value as 'all' | 'due_reminders' | AppointmentStatusValue
+                    )
                   }
                   aria-label="Filter by status"
                   className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:border-[#0F4C81]"
                 >
                   <option value="all">All Statuses</option>
+                  <option value="due_reminders">Due Reminders</option>
                   <option value="pending">Pending</option>
                   <option value="approved">Approved</option>
                   <option value="completed">Completed</option>
@@ -679,8 +794,29 @@ export function AdminDashboard({
                             <span className="font-mono tabular-nums">
                               {appt.appointmentDate} at {appt.timeSlot}
                             </span>{' '}
-                            · <span className="font-mono tabular-nums">NPR {appt.opdFee}</span>
+                            ·{' '}
+                            <span className="font-mono tabular-nums">
+                              {appt.opdFee > 0 ? `NPR ${appt.opdFee}` : 'Fee at Desk'}
+                            </span>
                           </div>
+                          {appt.reminderTiming && appt.reminderTiming !== 'none' && (
+                            <p className="text-xs text-slate-600 flex items-center gap-1.5">
+                              <Bell className="w-3.5 h-3.5 text-[#0F4C81]" aria-hidden="true" />
+                              <span>
+                                Reminder: {REMINDER_TIMING_LABELS[appt.reminderTiming]} (
+                                {appt.reminderChannel}) ·{' '}
+                                <strong
+                                  className={
+                                    appt.reminderStatus === 'sent'
+                                      ? 'text-emerald-700'
+                                      : 'text-amber-700'
+                                  }
+                                >
+                                  {appt.reminderStatus === 'sent' ? 'Sent' : 'Pending'}
+                                </strong>
+                              </span>
+                            </p>
+                          )}
                           {appt.reason && (
                             <p className="text-xs text-slate-600">Reason: {appt.reason}</p>
                           )}
@@ -709,16 +845,18 @@ export function AdminDashboard({
                             </button>
                           )}
 
-                          {appt.status !== 'completed' && appt.status !== 'rejected' && appt.status !== 'cancelled' && (
-                            <button
-                              type="button"
-                              disabled={isBusy}
-                              onClick={() => handleStatusChange(appt, 'completed')}
-                              className="px-3 py-1.5 rounded-lg bg-[#0F4C81] text-white text-xs font-medium hover:bg-[#0B3A63] disabled:opacity-50 cursor-pointer"
-                            >
-                              Complete
-                            </button>
-                          )}
+                          {appt.status !== 'completed' &&
+                            appt.status !== 'rejected' &&
+                            appt.status !== 'cancelled' && (
+                              <button
+                                type="button"
+                                disabled={isBusy}
+                                onClick={() => handleStatusChange(appt, 'completed')}
+                                className="px-3 py-1.5 rounded-lg bg-[#0F4C81] text-white text-xs font-medium hover:bg-[#0B3A63] disabled:opacity-50 cursor-pointer"
+                              >
+                                Complete
+                              </button>
+                            )}
 
                           {appt.status === 'pending' && (
                             <button
@@ -732,14 +870,45 @@ export function AdminDashboard({
                           )}
 
                           {(appt.status === 'pending' || appt.status === 'approved') && (
-                            <button
-                              type="button"
-                              disabled={isBusy}
-                              onClick={() => handleStatusChange(appt, 'cancelled')}
-                              className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 text-xs font-medium hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
-                            >
-                              Cancel
-                            </button>
+                            <>
+                              <button
+                                type="button"
+                                disabled={isBusy}
+                                onClick={() => handleStatusChange(appt, 'cancelled')}
+                                className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 text-xs font-medium hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
+                              >
+                                Cancel
+                              </button>
+                              <a
+                                href={buildWhatsAppReminderHref({
+                                  mobileNumber: appt.mobileNumber,
+                                  patientName: appt.patientName,
+                                  bookingId: appt.bookingId,
+                                  doctorName: appt.doctorName,
+                                  appointmentDate: appt.appointmentDate,
+                                  timeSlot: appt.timeSlot,
+                                  forPatient: true,
+                                })}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-800 text-xs font-medium hover:bg-emerald-100"
+                              >
+                                <MessageCircle className="w-3.5 h-3.5" aria-hidden="true" />
+                                <span>WhatsApp Remind</span>
+                              </a>
+                              {appt.reminderStatus !== 'sent' && (
+                                <button
+                                  type="button"
+                                  disabled={isBusy}
+                                  onClick={() =>
+                                    handleStatusChange(appt, appt.status, appt.adminNote, 'sent')
+                                  }
+                                  className="px-2.5 py-1.5 rounded-lg border border-sky-300 bg-sky-50 text-[#0F4C81] text-xs font-medium hover:bg-sky-100 disabled:opacity-50 cursor-pointer"
+                                >
+                                  Mark Reminded
+                                </button>
+                              )}
+                            </>
                           )}
 
                           <button
@@ -783,12 +952,12 @@ export function AdminDashboard({
           </div>
         )}
 
-        {/* TAB 2: DOCTORS */}
+        {/* TAB 2: DOCTORS (with Individual Photo Upload, Qualifications, Schedule & Fees) */}
         {activeTab === 'doctors' && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="font-display text-lg font-semibold text-slate-950">
-                Manage Doctors, OPD Fees &amp; Time Slots
+                Manage Doctors, Photos, Schedules, OPD Fees &amp; Time Slots
               </h2>
               <button
                 type="button"
@@ -798,6 +967,11 @@ export function AdminDashboard({
                     id: '',
                     name: '',
                     specialty: '',
+                    qualification: '',
+                    nmcNo: '',
+                    opdSchedule: '',
+                    photoUrl: '',
+                    clinicalFocus: '',
                     departmentId: departments[0]?.id || 'orthopedics',
                     opdFee: 400,
                     isAvailable: true,
@@ -833,6 +1007,51 @@ export function AdminDashboard({
                   </button>
                 </div>
 
+                {/* Doctor Portrait Upload Control */}
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center gap-4">
+                  <div className="w-24 h-24 rounded-xl overflow-hidden border border-slate-300 bg-white flex items-center justify-center shrink-0">
+                    {editingDoctor.photoUrl ? (
+                      <img
+                        src={editingDoctor.photoUrl}
+                        alt="Doctor preview"
+                        className="w-full h-full object-cover object-top"
+                      />
+                    ) : (
+                      <ImagePlus className="w-7 h-7 text-slate-400" aria-hidden="true" />
+                    )}
+                  </div>
+                  <div className="space-y-2 flex-1">
+                    <div className="text-xs font-semibold text-slate-900">
+                      Doctor Profile Photo (Auto-cropped &amp; optimized)
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      Upload a clear portrait photo (JPG, PNG, or WEBP). Leave empty to display a
+                      clean clinical placeholder.
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <label className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#0F4C81] text-white text-xs font-medium hover:bg-[#0B3A63] cursor-pointer">
+                        <ImagePlus className="w-3.5 h-3.5" aria-hidden="true" />
+                        <span>{uploadingPhoto ? 'Processing...' : 'Upload Photo'}</span>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          onChange={handlePhotoFileChange}
+                          className="sr-only"
+                        />
+                      </label>
+                      {editingDoctor.photoUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setEditingDoctor({ ...editingDoctor, photoUrl: '' })}
+                          className="px-3 py-2 rounded-lg border border-slate-300 bg-white text-xs font-medium text-rose-700 hover:bg-rose-50 cursor-pointer"
+                        >
+                          Remove Photo
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="sm:col-span-2">
                     <label className="block text-xs font-medium text-slate-700 mb-1">
@@ -852,23 +1071,23 @@ export function AdminDashboard({
 
                   <div>
                     <label className="block text-xs font-medium text-slate-700 mb-1">
-                      Specialty (Optional)
+                      Specialization
                     </label>
                     <input
                       type="text"
-                      maxLength={100}
+                      maxLength={150}
                       value={editingDoctor.specialty}
                       onChange={(e) =>
                         setEditingDoctor({ ...editingDoctor, specialty: e.target.value })
                       }
-                      placeholder="e.g. Physician, ENT Specialist"
+                      placeholder="e.g. Consultant Physician"
                       className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"
                     />
                   </div>
 
                   <div>
                     <label className="block text-xs font-medium text-slate-700 mb-1">
-                      OPD Fee (NPR) *
+                      OPD Fee (NPR, 0 = Confirm at Desk)
                     </label>
                     <input
                       type="number"
@@ -883,6 +1102,54 @@ export function AdminDashboard({
                         })
                       }
                       className="w-full px-3 py-2 text-sm font-mono tabular-nums border border-slate-300 rounded-lg"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                      Qualification (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={350}
+                      value={editingDoctor.qualification || ''}
+                      onChange={(e) =>
+                        setEditingDoctor({ ...editingDoctor, qualification: e.target.value })
+                      }
+                      placeholder="e.g. MBBS, MD"
+                      className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                      OPD Schedule (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={100}
+                      value={editingDoctor.opdSchedule || ''}
+                      onChange={(e) =>
+                        setEditingDoctor({ ...editingDoctor, opdSchedule: e.target.value })
+                      }
+                      placeholder="Only when provided (e.g. Daily Service)"
+                      className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                      NMC Reg. No. (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={30}
+                      value={editingDoctor.nmcNo || ''}
+                      onChange={(e) =>
+                        setEditingDoctor({ ...editingDoctor, nmcNo: e.target.value })
+                      }
+                      placeholder="e.g. 6802"
+                      className="w-full px-3 py-2 text-sm font-mono border border-slate-300 rounded-lg"
                     />
                   </div>
 
@@ -903,6 +1170,22 @@ export function AdminDashboard({
                         </option>
                       ))}
                     </select>
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                      Clinical Areas / Focus (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={500}
+                      value={editingDoctor.clinicalFocus || ''}
+                      onChange={(e) =>
+                        setEditingDoctor({ ...editingDoctor, clinicalFocus: e.target.value })
+                      }
+                      placeholder="Brief verified clinical focus shown in profile modal"
+                      className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"
+                    />
                   </div>
 
                   <div className="flex items-center gap-2 pt-5">
@@ -1006,7 +1289,7 @@ export function AdminDashboard({
                   </button>
                   <button
                     type="submit"
-                    disabled={savingDoctor}
+                    disabled={savingDoctor || uploadingPhoto}
                     className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-[#0F4C81] text-white text-sm font-medium hover:bg-[#0B3A63] cursor-pointer"
                   >
                     {savingDoctor ? (
@@ -1026,22 +1309,37 @@ export function AdminDashboard({
                   key={doctor.id}
                   className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                 >
-                  <div className="space-y-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-display font-semibold text-slate-950">
-                        {doctor.name}
-                      </span>
-                      <span className="text-xs text-slate-500">
-                        {doctor.specialty || 'OPD Consultant'} ·{' '}
-                        {departments.find((d) => d.id === doctor.departmentId)?.name ||
-                          doctor.departmentId}
-                      </span>
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 shrink-0 flex items-center justify-center">
+                      {doctor.photoUrl ? (
+                        <img
+                          src={doctor.photoUrl}
+                          alt={doctor.name}
+                          className="w-full h-full object-cover object-top"
+                        />
+                      ) : (
+                        <ImagePlus className="w-5 h-5 text-slate-400" aria-hidden="true" />
+                      )}
                     </div>
-                    <div className="text-xs text-slate-600 font-mono tabular-nums">
-                      OPD Fee: NPR {doctor.opdFee} · {doctor.availableSlots.length} Slots ·{' '}
-                      <span className={doctor.isAvailable ? 'text-emerald-700' : 'text-rose-700'}>
-                        {doctor.isAvailable ? 'Available' : 'Paused'}
-                      </span>
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-display font-semibold text-slate-950">
+                          {doctor.name}
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          {doctor.specialty || 'OPD Consultant'} ·{' '}
+                          {departments.find((d) => d.id === doctor.departmentId)?.name ||
+                            doctor.departmentId}
+                        </span>
+                      </div>
+                      <div className="text-xs text-slate-600 font-mono tabular-nums">
+                        OPD Fee: {doctor.opdFee > 0 ? `NPR ${doctor.opdFee}` : 'Confirm at Desk'} ·{' '}
+                        {doctor.availableSlots.length} Slots
+                        {doctor.opdSchedule ? ` · ${doctor.opdSchedule}` : ''} ·{' '}
+                        <span className={doctor.isAvailable ? 'text-emerald-700' : 'text-rose-700'}>
+                          {doctor.isAvailable ? 'Available' : 'Paused'}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
@@ -1054,7 +1352,7 @@ export function AdminDashboard({
                       }}
                       className="px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-medium text-slate-800 hover:bg-slate-50 cursor-pointer"
                     >
-                      Edit Fee &amp; Slots
+                      Edit Photo, Fee &amp; Slots
                     </button>
                     <button
                       type="button"
@@ -1085,6 +1383,7 @@ export function AdminDashboard({
                   setEditingDept({
                     id: '',
                     name: '',
+                    nepaliName: '',
                     summary: '',
                     careScope: '',
                     is24x7: false,
@@ -1128,13 +1427,27 @@ export function AdminDashboard({
                     <input
                       type="text"
                       required
-                      maxLength={80}
+                      maxLength={100}
                       value={editingDept.name}
                       onChange={(e) => setEditingDept({ ...editingDept, name: e.target.value })}
                       className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"
                     />
                   </div>
                   <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                      Nepali Subtitle (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={120}
+                      value={editingDept.nepaliName || ''}
+                      onChange={(e) =>
+                        setEditingDept({ ...editingDept, nepaliName: e.target.value })
+                      }
+                      className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
                     <label className="block text-xs font-medium text-slate-700 mb-1">
                       Care Scope Line
                     </label>
@@ -1221,10 +1534,17 @@ export function AdminDashboard({
                   className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                 >
                   <div className="space-y-1">
-                    <div className="font-display font-semibold text-slate-950">{dept.name}</div>
+                    <div className="font-display font-semibold text-slate-950">
+                      {dept.name}
+                      {dept.nepaliName ? (
+                        <span className="text-xs font-normal text-[#0F4C81] ml-2">
+                          ({dept.nepaliName})
+                        </span>
+                      ) : null}
+                    </div>
                     <p className="text-xs text-slate-600">{dept.summary}</p>
                     <p className="text-xs text-slate-500">
-                      {dept.is24x7 ? '24/7 Ward/Service' : 'OPD Service'} ·{' '}
+                      {dept.is24x7 ? 'OPD & Surgical/Inpatient' : 'OPD Service'} ·{' '}
                       {dept.isActive ? 'Active' : 'Inactive'}
                     </p>
                   </div>
@@ -1255,7 +1575,100 @@ export function AdminDashboard({
           </div>
         )}
 
-        {/* TAB 4: ADMIN ACCESS */}
+        {/* TAB 4: PATIENT FEEDBACK MODERATION */}
+        {activeTab === 'feedback' && (
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <div className="p-4 sm:p-5 border-b border-slate-200">
+              <h2 className="font-display text-lg font-semibold text-slate-950">
+                Patient Feedback Moderation
+              </h2>
+              <p className="text-xs text-slate-600 mt-0.5">
+                Hide or remove inappropriate reviews, or keep verified patient feedback published.
+              </p>
+            </div>
+
+            {feedbackItems.length === 0 ? (
+              <div className="p-12 text-center text-sm text-slate-500">
+                No patient feedback entries have been submitted yet.
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-200">
+                {feedbackItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                  >
+                    <div className="space-y-1.5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-display font-semibold text-slate-950 text-sm">
+                          {item.patientName}
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-xs font-mono text-amber-700">
+                          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+                          {item.rating}/5
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          {item.visitType} · {item.departmentName}
+                          {item.doctorName ? ` · ${item.doctorName}` : ''}
+                        </span>
+                      </div>
+                      <p className="text-sm text-slate-700">{item.comment}</p>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          setActionError(null);
+                          try {
+                            await adminToggleFeedbackPublish(item.id, !item.isPublished);
+                            setActionMsg(
+                              item.isPublished
+                                ? `Hid feedback from ${item.patientName}.`
+                                : `Published feedback from ${item.patientName}.`
+                            );
+                          } catch (err) {
+                            setActionError(
+                              err instanceof Error ? err.message : 'Unable to update feedback.'
+                            );
+                          }
+                        }}
+                        className={`px-3 py-1.5 rounded-lg border text-xs font-medium cursor-pointer ${
+                          item.isPublished
+                            ? 'border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
+                            : 'border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        {item.isPublished ? 'Published (Hide)' : 'Hidden (Publish)'}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          setActionError(null);
+                          try {
+                            await adminDeleteFeedback(item.id);
+                            setActionMsg(`Deleted feedback from ${item.patientName}.`);
+                          } catch (err) {
+                            setActionError(
+                              err instanceof Error ? err.message : 'Unable to delete feedback.'
+                            );
+                          }
+                        }}
+                        aria-label={`Delete feedback by ${item.patientName}`}
+                        className="p-1.5 rounded-lg border border-rose-200 text-rose-700 hover:bg-rose-50 cursor-pointer"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 5: ADMIN ACCESS */}
         {activeTab === 'access' && (
           <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-5 max-w-xl">
             <div className="space-y-1">

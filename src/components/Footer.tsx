@@ -14,11 +14,21 @@ export function Footer({ onNavigate, onToggleChat, isChatOpen }: FooterProps) {
       <footer className="bg-slate-950 text-slate-300 border-t border-slate-800">
         <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-12 grid grid-cols-1 md:grid-cols-12 gap-8">
           <div className="md:col-span-5 space-y-3">
-            <div className="font-display text-lg font-bold text-white">
-              {HOSPITAL_INFO.name}
+            <div className="flex items-center gap-3">
+              <img
+                src={HOSPITAL_INFO.logoUrl}
+                alt="Spine X Hospital Logo"
+                className="h-10 w-auto rounded bg-white px-1.5 py-0.5 object-contain"
+              />
+              <div className="font-display text-base sm:text-lg font-bold text-white leading-snug">
+                {HOSPITAL_INFO.name}
+              </div>
             </div>
             <p className="text-sm text-slate-400 leading-relaxed max-w-md">
               {HOSPITAL_INFO.address} · {HOSPITAL_INFO.emergencyAvailability}
+            </p>
+            <p className="text-xs font-mono text-slate-400">
+              Tel: {HOSPITAL_INFO.landlines} | Helpline: {HOSPITAL_INFO.phone}
             </p>
             <div className="pt-2 flex flex-wrap gap-3">
               <a

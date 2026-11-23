@@ -14,7 +14,11 @@
         "name": {
           "type": "string",
           "minLength": 2,
-          "maxLength": 80
+          "maxLength": 100
+        },
+        "nepaliName": {
+          "type": "string",
+          "maxLength": 120
         },
         "summary": {
           "type": "string",
@@ -42,7 +46,7 @@
     },
     "Doctor": {
       "title": "Doctor",
-      "description": "Hospital doctor directory profile with OPD fee and configurable booking slots.",
+      "description": "Hospital doctor directory profile with photo, qualification, OPD fee, schedule, and booking slots.",
       "type": "object",
       "properties": {
         "id": {
@@ -58,7 +62,27 @@
         },
         "specialty": {
           "type": "string",
+          "maxLength": 150
+        },
+        "qualification": {
+          "type": "string",
+          "maxLength": 350
+        },
+        "nmcNo": {
+          "type": "string",
+          "maxLength": 30
+        },
+        "opdSchedule": {
+          "type": "string",
           "maxLength": 100
+        },
+        "photoUrl": {
+          "type": "string",
+          "maxLength": 150000
+        },
+        "clinicalFocus": {
+          "type": "string",
+          "maxLength": 500
         },
         "departmentId": {
           "type": "string",
@@ -163,7 +187,7 @@
         "departmentName": {
           "type": "string",
           "minLength": 2,
-          "maxLength": 80
+          "maxLength": 100
         },
         "doctorId": {
           "type": "string",
@@ -214,6 +238,18 @@
           "type": "string",
           "maxLength": 300
         },
+        "reminderTiming": {
+          "type": "string",
+          "enum": ["24_hours_before", "2_hours_before", "morning_of_visit", "none"]
+        },
+        "reminderChannel": {
+          "type": "string",
+          "enum": ["Calendar & Browser Alert", "WhatsApp Desk Reminder", "None"]
+        },
+        "reminderStatus": {
+          "type": "string",
+          "enum": ["pending", "sent", "not_needed"]
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time"
@@ -241,6 +277,9 @@
         "slotLockId",
         "statusLookupId",
         "adminNote",
+        "reminderTiming",
+        "reminderChannel",
+        "reminderStatus",
         "createdAt",
         "updatedAt"
       ]
@@ -269,7 +308,7 @@
         "departmentName": {
           "type": "string",
           "minLength": 2,
-          "maxLength": 80
+          "maxLength": 100
         },
         "doctorName": {
           "type": "string",
@@ -298,6 +337,18 @@
           "type": "string",
           "maxLength": 300
         },
+        "reminderTiming": {
+          "type": "string",
+          "enum": ["24_hours_before", "2_hours_before", "morning_of_visit", "none"]
+        },
+        "reminderChannel": {
+          "type": "string",
+          "enum": ["Calendar & Browser Alert", "WhatsApp Desk Reminder", "None"]
+        },
+        "reminderStatus": {
+          "type": "string",
+          "enum": ["pending", "sent", "not_needed"]
+        },
         "updatedAt": {
           "type": "string",
           "format": "date-time"
@@ -314,7 +365,60 @@
         "timeSlot",
         "status",
         "adminNote",
+        "reminderTiming",
+        "reminderChannel",
+        "reminderStatus",
         "updatedAt"
+      ]
+    },
+    "PatientFeedback": {
+      "title": "PatientFeedback",
+      "description": "Verified patient visit feedback and ratings moderated by hospital administrators.",
+      "type": "object",
+      "properties": {
+        "patientName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "departmentName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "doctorName": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "visitType": {
+          "type": "string",
+          "enum": ["OPD Consultation", "Emergency / Trauma", "Inpatient Ward", "Diagnostics / Lab"]
+        },
+        "rating": {
+          "type": "number"
+        },
+        "comment": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 500
+        },
+        "isPublished": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "patientName",
+        "departmentName",
+        "doctorName",
+        "visitType",
+        "rating",
+        "comment",
+        "isPublished",
+        "createdAt"
       ]
     },
     "AdminUser": {
@@ -350,7 +454,7 @@
     },
     "/doctors/{doctorId}": {
       "schema": { "$ref": "#/entities/Doctor" },
-      "description": "Doctor profiles with OPD fees and admin-managed availability slots."
+      "description": "Doctor profiles with real photos, qualifications, OPD fees, schedules, and availability slots."
     },
     "/bookedSlots/{slotLockId}": {
       "schema": { "$ref": "#/entities/BookedSlot" },
@@ -358,11 +462,15 @@
     },
     "/appointments/{appointmentId}": {
       "schema": { "$ref": "#/entities/Appointment" },
-      "description": "Patient appointment records containing PII, readable and manageable strictly by admins."
+      "description": "Patient appointment records containing PII and reminder preferences, readable and manageable strictly by admins."
     },
     "/appointmentStatus/{lookupId}": {
       "schema": { "$ref": "#/entities/AppointmentStatus" },
       "description": "SHA-256 keyed public status lookup requiring exact booking ID and mobile number."
+    },
+    "/feedback/{feedbackId}": {
+      "schema": { "$ref": "#/entities/PatientFeedback" },
+      "description": "Patient feedback ratings and reviews moderated by hospital administrators."
     },
     "/admins/{adminUid}": {
       "schema": { "$ref": "#/entities/AdminUser" },

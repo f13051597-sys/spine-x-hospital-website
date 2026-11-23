@@ -1,4 +1,14 @@
-import { AlertCircle, CheckCircle2, Clock, Copy, Loader2, Printer } from 'lucide-react';
+import {
+  AlertCircle,
+  Bell,
+  CalendarPlus,
+  CheckCircle2,
+  Clock,
+  Copy,
+  Loader2,
+  MessageCircle,
+  Printer,
+} from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { DEFAULT_OPD_SLOTS, HOSPITAL_INFO } from '../data/hospitalCatalog';
 import {
@@ -6,7 +16,20 @@ import {
   fetchBookedSlotsForDoctorDate,
   type BookingConfirmation,
 } from '../services/hospitalService';
-import type { Department, Doctor, GenderOption } from '../types/hospital';
+import type {
+  Department,
+  Doctor,
+  GenderOption,
+  ReminderChannel,
+  ReminderTiming,
+} from '../types/hospital';
+import {
+  buildWhatsAppReminderHref,
+  downloadCalendarReminder,
+  REMINDER_TIMING_LABELS,
+  requestBrowserReminderNotification,
+  saveLocalAppointmentReminder,
+} from '../utils/reminderUtils';
 
 interface BookingSectionProps {
   departments: Department[];
@@ -49,6 +72,10 @@ export function BookingSection({
   const [appointmentDate, setAppointmentDate] = useState<string>(getTodayDateString());
   const [timeSlot, setTimeSlot] = useState<string>('');
   const [reason, setReason] = useState('');
+  const [reminderTiming, setReminderTiming] = useState<ReminderTiming>('24_hours_before');
+  const [reminderChannel, setReminderChannel] = useState<ReminderChannel>(
+    'Calendar & Browser Alert'
+  );
 
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
@@ -56,8 +83,8 @@ export function BookingSection({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<BookingConfirmation | null>(null);
   const [copiedId, setCopiedId] = useState(false);
+  const [notifFeedback, setNotifFeedback] = useState<string | null>(null);
 
-  // Sync external pre-selections when user clicks "Book" on a department or doctor card
   useEffect(() => {
     if (preselectedDepartmentId && departments.some((d) => d.id === preselectedDepartmentId)) {
       setDepartmentId(preselectedDepartmentId);
@@ -135,6 +162,7 @@ export function BookingSection({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
+    setNotifFeedback(null);
 
     if (!selectedDoctor || !selectedDepartment) {
       setErrorMsg('Please select both a department and an available doctor.');
@@ -157,14 +185,27 @@ export function BookingSection({
         appointmentDate,
         timeSlot,
         reason,
+        reminderTiming,
+        reminderChannel,
       });
       setConfirmation(result);
       setBookedSlots((prev) => [...prev, timeSlot]);
+      if (reminderTiming !== 'none') {
+        saveLocalAppointmentReminder({
+          bookingId: result.bookingId,
+          mobileNumber: result.mobileNumber,
+          doctorName: result.doctorName,
+          departmentName: result.departmentName,
+          appointmentDate: result.appointmentDate,
+          timeSlot: result.timeSlot,
+          reminderTiming,
+          createdAtIso: new Date().toISOString(),
+        });
+      }
     } catch (err) {
       const msg =
         err instanceof Error ? err.message : 'Unable to submit appointment. Please try again.';
       setErrorMsg(msg);
-      // Refresh slot locks in case another patient booked simultaneously
       if (selectedDoctor && appointmentDate) {
         try {
           const locks = await fetchBookedSlotsForDoctorDate(selectedDoctor.id, appointmentDate);
@@ -189,6 +230,23 @@ export function BookingSection({
     }
   };
 
+  const handleEnableBrowserReminder = async () => {
+    if (!confirmation) return;
+    const perm = await requestBrowserReminderNotification({
+      bookingId: confirmation.bookingId,
+      doctorName: confirmation.doctorName,
+      appointmentDate: confirmation.appointmentDate,
+      timeSlot: confirmation.timeSlot,
+    });
+    if (perm === 'granted') {
+      setNotifFeedback('Browser notification reminder enabled for this device.');
+    } else if (perm === 'denied') {
+      setNotifFeedback('Browser notifications are blocked; download the Calendar (.ics) reminder instead.');
+    } else {
+      setNotifFeedback('Browser notifications are not supported here; use the Calendar (.ics) download.');
+    }
+  };
+
   const handleReset = () => {
     setConfirmation(null);
     setPatientName('');
@@ -198,6 +256,7 @@ export function BookingSection({
     setTimeSlot('');
     setReason('');
     setErrorMsg(null);
+    setNotifFeedback(null);
   };
 
   return (
@@ -246,7 +305,11 @@ export function BookingSection({
                 <div className="flex items-center justify-between gap-4 pt-3 border-t border-slate-200">
                   <dt className="text-slate-700 font-medium">OPD Consultation Fee</dt>
                   <dd className="font-mono tabular-nums text-base font-bold text-[#0F4C81]">
-                    {selectedDoctor ? `NPR ${selectedDoctor.opdFee}` : '—'}
+                    {selectedDoctor
+                      ? selectedDoctor.opdFee > 0
+                        ? `NPR ${selectedDoctor.opdFee}`
+                        : 'Confirm at OPD Desk'
+                      : '—'}
                   </dd>
                 </div>
               </dl>
@@ -259,8 +322,8 @@ export function BookingSection({
                 at{' '}
                 <a href={HOSPITAL_INFO.phoneHref} className="font-mono font-bold underline">
                   {HOSPITAL_INFO.phone}
-                </a>
-                .
+                </a>{' '}
+                or <span className="font-mono">{HOSPITAL_INFO.landlines}</span>.
               </p>
             </div>
           </div>
@@ -341,10 +404,68 @@ export function BookingSection({
                   <div>
                     <dt className="text-xs text-slate-500">OPD Fee (Pay at Hospital)</dt>
                     <dd className="font-mono tabular-nums font-semibold text-[#0F4C81] mt-0.5">
-                      NPR {confirmation.opdFee}
+                      {confirmation.opdFee > 0
+                        ? `NPR ${confirmation.opdFee}`
+                        : 'Confirm at OPD Desk'}
                     </dd>
                   </div>
                 </dl>
+
+                {/* Appointment Reminder Controls */}
+                <div className="p-4 rounded-xl bg-sky-50/70 border border-sky-200 space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-[#0F4C81]">
+                    <Bell className="w-4 h-4 shrink-0" aria-hidden="true" />
+                    <span>
+                      Appointment Reminder ({REMINDER_TIMING_LABELS[confirmation.reminderTiming]})
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        downloadCalendarReminder({
+                          bookingId: confirmation.bookingId,
+                          doctorName: confirmation.doctorName,
+                          departmentName: confirmation.departmentName,
+                          appointmentDate: confirmation.appointmentDate,
+                          timeSlot: confirmation.timeSlot,
+                          reminderTiming: confirmation.reminderTiming,
+                        })
+                      }
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-sky-300 text-xs font-medium text-[#0F4C81] hover:bg-sky-100 cursor-pointer"
+                    >
+                      <CalendarPlus className="w-3.5 h-3.5" aria-hidden="true" />
+                      <span>Add Calendar Reminder (.ics)</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleEnableBrowserReminder}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-slate-300 text-xs font-medium text-slate-800 hover:bg-slate-50 cursor-pointer"
+                    >
+                      <Bell className="w-3.5 h-3.5" aria-hidden="true" />
+                      <span>Enable Browser Alert</span>
+                    </button>
+
+                    <a
+                      href={buildWhatsAppReminderHref({
+                        bookingId: confirmation.bookingId,
+                        doctorName: confirmation.doctorName,
+                        appointmentDate: confirmation.appointmentDate,
+                        timeSlot: confirmation.timeSlot,
+                      })}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-700 text-white text-xs font-medium hover:bg-emerald-800"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" aria-hidden="true" />
+                      <span>WhatsApp Reminder</span>
+                    </a>
+                  </div>
+                  {notifFeedback && (
+                    <p className="text-xs text-slate-700">{notifFeedback}</p>
+                  )}
+                </div>
 
                 <p className="text-xs text-slate-600 leading-relaxed pt-3 border-t border-slate-200">
                   Save your Booking ID and mobile number to check approval updates anytime.
@@ -505,7 +626,7 @@ export function BookingSection({
                       {availableDoctors.map((doc) => (
                         <option key={doc.id} value={doc.id}>
                           {doc.name}
-                          {doc.specialty ? ` (${doc.specialty})` : ''} — NPR {doc.opdFee}
+                          {doc.opdFee > 0 ? ` — NPR ${doc.opdFee}` : ' — OPD'}
                         </option>
                       ))}
                     </select>
@@ -585,6 +706,48 @@ export function BookingSection({
                       })}
                     </div>
                   )}
+                </div>
+
+                {/* Appointment Reminder Options */}
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label
+                      htmlFor="booking-reminder-timing"
+                      className="block text-xs font-semibold text-slate-800 mb-1.5"
+                    >
+                      Appointment Reminder Timing
+                    </label>
+                    <select
+                      id="booking-reminder-timing"
+                      value={reminderTiming}
+                      onChange={(e) => setReminderTiming(e.target.value as ReminderTiming)}
+                      className="w-full px-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:border-[#0F4C81]"
+                    >
+                      <option value="24_hours_before">24 hours before visit</option>
+                      <option value="2_hours_before">2 hours before visit</option>
+                      <option value="morning_of_visit">Morning of visit (07:30 AM)</option>
+                      <option value="none">No reminder needed</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="booking-reminder-channel"
+                      className="block text-xs font-semibold text-slate-800 mb-1.5"
+                    >
+                      Preferred Reminder Method
+                    </label>
+                    <select
+                      id="booking-reminder-channel"
+                      disabled={reminderTiming === 'none'}
+                      value={reminderTiming === 'none' ? 'None' : reminderChannel}
+                      onChange={(e) => setReminderChannel(e.target.value as ReminderChannel)}
+                      className="w-full px-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-lg bg-white text-slate-900 disabled:bg-slate-100 focus:outline-none focus:border-[#0F4C81]"
+                    >
+                      <option value="Calendar & Browser Alert">Calendar &amp; Browser Alert</option>
+                      <option value="WhatsApp Desk Reminder">WhatsApp Desk Reminder</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div>

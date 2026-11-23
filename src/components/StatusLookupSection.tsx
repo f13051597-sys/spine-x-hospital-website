@@ -1,7 +1,25 @@
-import { AlertCircle, CheckCircle2, Clock3, Loader2, Search, XCircle } from 'lucide-react';
+import {
+  AlertCircle,
+  Bell,
+  CalendarPlus,
+  CheckCircle2,
+  Clock3,
+  Loader2,
+  Search,
+  Trash2,
+  XCircle,
+} from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { lookupAppointmentStatus } from '../services/hospitalService';
 import type { AppointmentStatusRecord, AppointmentStatusValue } from '../types/hospital';
+import {
+  downloadCalendarReminder,
+  getLocalAppointmentReminders,
+  REMINDER_TIMING_LABELS,
+  removeLocalAppointmentReminder,
+  requestBrowserReminderNotification,
+  type SavedLocalReminder,
+} from '../utils/reminderUtils';
 
 interface StatusLookupSectionProps {
   initialBookingId?: string;
@@ -49,19 +67,25 @@ export function StatusLookupSection({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [result, setResult] = useState<AppointmentStatusRecord | null>(null);
   const [searched, setSearched] = useState(false);
+  const [savedReminders, setSavedReminders] = useState<SavedLocalReminder[]>([]);
+  const [alertStatusMsg, setAlertStatusMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSavedReminders(getLocalAppointmentReminders());
+  }, [result]);
 
   useEffect(() => {
     if (initialBookingId) setBookingId(initialBookingId);
     if (initialMobile) setMobileNumber(initialMobile);
   }, [initialBookingId, initialMobile]);
 
-  const handleCheck = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const runLookup = async (idToLookup: string, mobileToLookup: string) => {
     setErrorMsg(null);
     setSearched(false);
+    setAlertStatusMsg(null);
     setLoading(true);
     try {
-      const record = await lookupAppointmentStatus(bookingId, mobileNumber);
+      const record = await lookupAppointmentStatus(idToLookup, mobileToLookup);
       setResult(record);
       setSearched(true);
     } catch (err) {
@@ -72,6 +96,11 @@ export function StatusLookupSection({
     }
   };
 
+  const handleCheck = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await runLookup(bookingId, mobileNumber);
+  };
+
   const statusMeta = result ? STATUS_DISPLAY[result.status] : null;
   const StatusIcon = statusMeta?.icon || Clock3;
 
@@ -79,18 +108,90 @@ export function StatusLookupSection({
     <section className="py-14 lg:py-20 bg-slate-50 border-b border-slate-200">
       <div className="max-w-[900px] mx-auto px-4 sm:px-6 space-y-8">
         <div className="space-y-2 text-center max-w-xl mx-auto">
-          <p className="text-xs font-medium text-emerald-800">Verified Patient Lookup</p>
+          <p className="text-xs font-medium text-emerald-800">
+            Verified Patient Lookup &amp; Reminders
+          </p>
           <h2
             className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-slate-950"
             style={{ textWrap: 'balance' }}
           >
-            Check Appointment Status
+            Check Appointment Status &amp; Reminders
           </h2>
           <p className="text-sm text-slate-600">
             Enter both your unique Booking ID and the mobile number used during registration. Other
             patients’ records remain strictly private.
           </p>
         </div>
+
+        {/* Upcoming Saved Local Appointment Reminders */}
+        {savedReminders.length > 0 && (
+          <div className="bg-white border border-sky-200 rounded-xl p-5 space-y-3">
+            <div className="flex items-center gap-2 text-sm font-semibold text-[#0F4C81]">
+              <Bell className="w-4 h-4 shrink-0" aria-hidden="true" />
+              <span>Your Upcoming Saved Appointment Reminders ({savedReminders.length})</span>
+            </div>
+            <div className="divide-y divide-slate-100">
+              {savedReminders.map((rem) => (
+                <div
+                  key={rem.bookingId}
+                  className="py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm"
+                >
+                  <div>
+                    <span className="font-mono font-semibold text-[#0F4C81] mr-2">
+                      {rem.bookingId}
+                    </span>
+                    <span className="font-medium text-slate-900">{rem.doctorName}</span>
+                    <span className="text-slate-600">
+                      {' '}
+                      · {rem.appointmentDate} at {rem.timeSlot}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBookingId(rem.bookingId);
+                        setMobileNumber(rem.mobileNumber);
+                        void runLookup(rem.bookingId, rem.mobileNumber);
+                      }}
+                      className="px-2.5 py-1.5 rounded-lg border border-sky-300 text-xs font-medium text-[#0F4C81] hover:bg-sky-50 cursor-pointer"
+                    >
+                      Check Live Status
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        downloadCalendarReminder({
+                          bookingId: rem.bookingId,
+                          doctorName: rem.doctorName,
+                          departmentName: rem.departmentName,
+                          appointmentDate: rem.appointmentDate,
+                          timeSlot: rem.timeSlot,
+                          reminderTiming: rem.reminderTiming,
+                        })
+                      }
+                      aria-label={`Download calendar reminder for ${rem.bookingId}`}
+                      className="p-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 cursor-pointer"
+                    >
+                      <CalendarPlus className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        removeLocalAppointmentReminder(rem.bookingId);
+                        setSavedReminders(getLocalAppointmentReminders());
+                      }}
+                      aria-label={`Remove saved reminder ${rem.bookingId}`}
+                      className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:text-rose-700 hover:bg-rose-50 cursor-pointer"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <form
           onSubmit={handleCheck}
@@ -202,9 +303,21 @@ export function StatusLookupSection({
                 <div>
                   <dt className="text-xs text-slate-500">OPD Fee</dt>
                   <dd className="font-mono tabular-nums font-semibold text-[#0F4C81] mt-0.5">
-                    NPR {result.opdFee}
+                    {result.opdFee > 0 ? `NPR ${result.opdFee}` : 'Confirm at OPD Desk'}
                   </dd>
                 </div>
+                {result.reminderTiming && result.reminderTiming !== 'none' && (
+                  <div className="sm:col-span-2">
+                    <dt className="text-xs text-slate-500">Appointment Reminder Preference</dt>
+                    <dd className="text-xs font-medium text-slate-800 mt-1">
+                      {REMINDER_TIMING_LABELS[result.reminderTiming]} ·{' '}
+                      {result.reminderChannel || 'Calendar & Browser Alert'} ·{' '}
+                      <span className="capitalize text-emerald-800">
+                        {result.reminderStatus === 'sent' ? 'Reminder Sent' : 'Scheduled'}
+                      </span>
+                    </dd>
+                  </div>
+                )}
               </dl>
 
               {result.adminNote && (
@@ -213,6 +326,52 @@ export function StatusLookupSection({
                     Hospital Desk Note
                   </div>
                   <p className="text-slate-800">{result.adminNote}</p>
+                </div>
+              )}
+
+              {(result.status === 'pending' || result.status === 'approved') && (
+                <div className="pt-2 flex flex-wrap items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      downloadCalendarReminder({
+                        bookingId: result.bookingId,
+                        doctorName: result.doctorName,
+                        departmentName: result.departmentName,
+                        appointmentDate: result.appointmentDate,
+                        timeSlot: result.timeSlot,
+                        reminderTiming: result.reminderTiming || '24_hours_before',
+                      })
+                    }
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-sky-300 bg-sky-50 text-xs font-medium text-[#0F4C81] hover:bg-sky-100 cursor-pointer"
+                  >
+                    <CalendarPlus className="w-3.5 h-3.5" aria-hidden="true" />
+                    <span>Add Calendar Reminder (.ics)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const status = await requestBrowserReminderNotification({
+                        bookingId: result.bookingId,
+                        doctorName: result.doctorName,
+                        appointmentDate: result.appointmentDate,
+                        timeSlot: result.timeSlot,
+                      });
+                      setAlertStatusMsg(
+                        status === 'granted'
+                          ? 'Browser alert enabled for this visit.'
+                          : 'Use the Calendar (.ics) download to set a reminder on your phone or computer.'
+                      );
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-800 hover:bg-slate-50 cursor-pointer"
+                  >
+                    <Bell className="w-3.5 h-3.5" aria-hidden="true" />
+                    <span>Browser Notification</span>
+                  </button>
+                  {alertStatusMsg && (
+                    <span className="text-xs text-slate-600">{alertStatusMsg}</span>
+                  )}
                 </div>
               )}
             </div>

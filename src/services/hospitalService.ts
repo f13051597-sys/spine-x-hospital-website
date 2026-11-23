@@ -7,6 +7,7 @@ import {
   query,
   serverTimestamp,
   setDoc,
+  updateDoc,
   where,
   writeBatch,
 } from 'firebase/firestore';
@@ -19,7 +20,12 @@ import type {
   BookedSlot,
   Department,
   Doctor,
+  FeedbackVisitType,
   GenderOption,
+  PatientFeedback,
+  ReminderChannel,
+  ReminderStatus,
+  ReminderTiming,
 } from '../types/hospital';
 
 export const VALIDATION_RULES = {
@@ -31,7 +37,11 @@ export const VALIDATION_RULES = {
   patientNameMax: 100,
   reasonMax: 500,
   adminNoteMax: 300,
+  feedbackCommentMin: 5,
+  feedbackCommentMax: 500,
 } as const;
+
+const LEGACY_NON_OPD_DEPARTMENT_IDS = new Set(['emergency', 'icu']);
 
 export function normalizeMobileNumber(raw: string): string {
   const digits = raw.replace(/\D/g, '');
@@ -103,6 +113,35 @@ function getInitials(name: string): string {
     .slice(0, 10);
 }
 
+function mergeDepartmentWithDefaults(dept: Department): Department {
+  const baseline = INITIAL_DEPARTMENTS.find((d) => d.id === dept.id);
+  if (!baseline) return dept;
+  return {
+    ...baseline,
+    ...dept,
+    nepaliName: dept.nepaliName !== undefined ? dept.nepaliName : baseline.nepaliName,
+  };
+}
+
+function mergeDoctorWithDefaults(docItem: Doctor): Doctor {
+  const baseline = INITIAL_DOCTORS.find((d) => d.id === docItem.id);
+  if (!baseline) return docItem;
+  return {
+    ...baseline,
+    ...docItem,
+    name: docItem.name || baseline.name,
+    specialty: docItem.specialty || baseline.specialty,
+    qualification:
+      docItem.qualification !== undefined ? docItem.qualification : baseline.qualification,
+    nmcNo: docItem.nmcNo !== undefined ? docItem.nmcNo : baseline.nmcNo,
+    opdSchedule:
+      docItem.opdSchedule !== undefined ? docItem.opdSchedule : baseline.opdSchedule,
+    photoUrl: docItem.photoUrl !== undefined ? docItem.photoUrl : baseline.photoUrl,
+    clinicalFocus:
+      docItem.clinicalFocus !== undefined ? docItem.clinicalFocus : baseline.clinicalFocus,
+  };
+}
+
 export async function fetchPublicCatalog(includeInactive = false): Promise<{
   departments: Department[];
   doctors: Doctor[];
@@ -118,9 +157,16 @@ export async function fetchPublicCatalog(includeInactive = false): Promise<{
       : query(collection(db, 'departments'), where('isActive', '==', true));
     const deptSnap = await getDocs(deptQuery);
     if (!deptSnap.empty) {
-      departments = deptSnap.docs
-        .map((d) => d.data() as Department)
-        .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+      const fetchedDepts = deptSnap.docs
+        .map((d) => mergeDepartmentWithDefaults(d.data() as Department))
+        .filter((d) => !LEGACY_NON_OPD_DEPARTMENT_IDS.has(d.id));
+
+      // Ensure newly added core departments (like neonatal-pediatrics) exist in catalog view
+      const existingIds = new Set(fetchedDepts.map((d) => d.id));
+      const missingCoreDepts = INITIAL_DEPARTMENTS.filter((d) => !existingIds.has(d.id));
+      departments = [...fetchedDepts, ...missingCoreDepts].sort(
+        (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
+      );
       fromFirestore = true;
     }
   } catch (error) {
@@ -133,9 +179,14 @@ export async function fetchPublicCatalog(includeInactive = false): Promise<{
       : query(collection(db, 'doctors'), where('isAvailable', '==', true));
     const docSnap = await getDocs(docQuery);
     if (!docSnap.empty) {
-      doctors = docSnap.docs
-        .map((d) => d.data() as Doctor)
-        .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+      const fetchedDocs = docSnap.docs.map((d) => mergeDoctorWithDefaults(d.data() as Doctor));
+      const existingDocIds = new Set(fetchedDocs.map((d) => d.id));
+      const missingCoreDocs = INITIAL_DOCTORS.filter(
+        (d) => !existingDocIds.has(d.id) && (includeInactive || d.isAvailable)
+      );
+      doctors = [...fetchedDocs, ...missingCoreDocs].sort(
+        (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
+      );
       fromFirestore = true;
     }
   } catch (error) {
@@ -165,10 +216,7 @@ export async function fetchBookedSlotsForDoctorDate(
 ): Promise<BookedSlot[]> {
   if (!doctorId || !appointmentDate) return [];
   try {
-    const q = query(
-      collection(db, 'bookedSlots'),
-      where('status', '==', 'active')
-    );
+    const q = query(collection(db, 'bookedSlots'), where('status', '==', 'active'));
     const snap = await getDocs(q);
     return snap.docs
       .map((d) => ({ id: d.id, ...(d.data() as BookedSlot) }))
@@ -190,6 +238,8 @@ export interface CreateAppointmentInput {
   appointmentDate: string;
   timeSlot: string;
   reason: string;
+  reminderTiming: ReminderTiming;
+  reminderChannel: ReminderChannel;
 }
 
 export interface BookingConfirmation {
@@ -202,6 +252,8 @@ export interface BookingConfirmation {
   opdFee: number;
   appointmentDate: string;
   timeSlot: string;
+  reminderTiming: ReminderTiming;
+  reminderChannel: ReminderChannel;
 }
 
 export async function createAppointmentBooking(
@@ -234,8 +286,11 @@ export async function createAppointmentBooking(
   const bookingId = generateBookingId();
   const slotLockId = buildSlotLockId(input.doctor.id, appointmentDate, timeSlot);
   const statusLookupId = await computeStatusLookupId(bookingId, mobileNumber);
+  const reminderTiming: ReminderTiming = input.reminderTiming || '24_hours_before';
+  const reminderChannel: ReminderChannel =
+    reminderTiming === 'none' ? 'None' : input.reminderChannel || 'Calendar & Browser Alert';
+  const reminderStatus: ReminderStatus = reminderTiming === 'none' ? 'not_needed' : 'pending';
 
-  // Quick pre-check on slot lock so user gets immediate feedback before writeBatch
   const slotRef = doc(db, 'bookedSlots', slotLockId);
   try {
     const existingSlot = await getDoc(slotRef);
@@ -253,7 +308,6 @@ export async function createAppointmentBooking(
   const batch = writeBatch(db);
   const appointmentRef = doc(db, 'appointments', appointmentId);
   const statusRef = doc(db, 'appointmentStatus', statusLookupId);
-
   const now = serverTimestamp();
 
   batch.set(slotRef, {
@@ -272,7 +326,7 @@ export async function createAppointmentBooking(
     age,
     gender: input.gender || '',
     departmentId: input.department.id,
-    departmentName: input.department.name.slice(0, 80),
+    departmentName: input.department.name.slice(0, 100),
     doctorId: input.doctor.id,
     doctorName: input.doctor.name.slice(0, 100),
     opdFee: Number(input.doctor.opdFee),
@@ -283,6 +337,9 @@ export async function createAppointmentBooking(
     slotLockId,
     statusLookupId,
     adminNote: '',
+    reminderTiming,
+    reminderChannel,
+    reminderStatus,
     createdAt: now,
     updatedAt: now,
   });
@@ -291,13 +348,16 @@ export async function createAppointmentBooking(
     bookingId,
     appointmentId,
     patientInitials: getInitials(patientName),
-    departmentName: input.department.name.slice(0, 80),
+    departmentName: input.department.name.slice(0, 100),
     doctorName: input.doctor.name.slice(0, 100),
     opdFee: Number(input.doctor.opdFee),
     appointmentDate,
     timeSlot,
     status: 'pending',
     adminNote: '',
+    reminderTiming,
+    reminderChannel,
+    reminderStatus,
     updatedAt: now,
   });
 
@@ -313,11 +373,16 @@ export async function createAppointmentBooking(
       opdFee: Number(input.doctor.opdFee),
       appointmentDate,
       timeSlot,
+      reminderTiming,
+      reminderChannel,
     };
   } catch (error) {
     const msg = error instanceof Error ? error.message.toLowerCase() : '';
-    if (msg.includes('permission-denied') || msg.includes('already exists') || msg.includes('missing or insufficient permissions')) {
-      // Re-check if slot became taken concurrently
+    if (
+      msg.includes('permission-denied') ||
+      msg.includes('already exists') ||
+      msg.includes('missing or insufficient permissions')
+    ) {
       try {
         const recheck = await getDoc(slotRef);
         if (recheck.exists()) {
@@ -376,6 +441,7 @@ export async function seedCatalogIfEmpty(): Promise<boolean> {
       for (const dept of INITIAL_DEPARTMENTS) {
         batch.set(doc(db, 'departments', dept.id), {
           ...dept,
+          nepaliName: dept.nepaliName || '',
           updatedAt: serverTimestamp(),
         });
       }
@@ -386,6 +452,11 @@ export async function seedCatalogIfEmpty(): Promise<boolean> {
       for (const doctor of INITIAL_DOCTORS) {
         batch.set(doc(db, 'doctors', doctor.id), {
           ...doctor,
+          qualification: doctor.qualification || '',
+          nmcNo: doctor.nmcNo || '',
+          opdSchedule: doctor.opdSchedule || '',
+          photoUrl: doctor.photoUrl || '',
+          clinicalFocus: doctor.clinicalFocus || '',
           updatedAt: serverTimestamp(),
         });
       }
@@ -401,28 +472,65 @@ export async function seedCatalogIfEmpty(): Promise<boolean> {
   }
 }
 
+export async function syncOfficialCatalogToFirestore(): Promise<void> {
+  try {
+    const batch = writeBatch(db);
+    for (const dept of INITIAL_DEPARTMENTS) {
+      batch.set(doc(db, 'departments', dept.id), {
+        ...dept,
+        nepaliName: dept.nepaliName || '',
+        updatedAt: serverTimestamp(),
+      });
+    }
+    for (const legacyId of LEGACY_NON_OPD_DEPARTMENT_IDS) {
+      batch.delete(doc(db, 'departments', legacyId));
+    }
+    for (const doctor of INITIAL_DOCTORS) {
+      batch.set(doc(db, 'doctors', doctor.id), {
+        ...doctor,
+        qualification: doctor.qualification || '',
+        nmcNo: doctor.nmcNo || '',
+        opdSchedule: doctor.opdSchedule || '',
+        photoUrl: doctor.photoUrl || '',
+        clinicalFocus: doctor.clinicalFocus || '',
+        updatedAt: serverTimestamp(),
+      });
+    }
+    await batch.commit();
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, 'catalog/sync-official');
+  }
+}
+
 export async function updateAppointmentStatus(
   appointment: Appointment,
   nextStatus: AppointmentStatusValue,
-  adminNote: string
+  adminNote: string,
+  nextReminderStatus?: ReminderStatus
 ): Promise<void> {
   const cleanNote = adminNote.trim().slice(0, VALIDATION_RULES.adminNoteMax);
   const batch = writeBatch(db);
   const now = serverTimestamp();
 
-  batch.update(doc(db, 'appointments', appointment.id), {
+  const apptPatch: Record<string, unknown> = {
     status: nextStatus,
     adminNote: cleanNote,
     updatedAt: now,
-  });
-
-  batch.update(doc(db, 'appointmentStatus', appointment.statusLookupId), {
+  };
+  const statusPatch: Record<string, unknown> = {
     status: nextStatus,
     adminNote: cleanNote,
     updatedAt: now,
-  });
+  };
 
-  // Free slot lock when rejected or cancelled
+  if (nextReminderStatus) {
+    apptPatch.reminderStatus = nextReminderStatus;
+    statusPatch.reminderStatus = nextReminderStatus;
+  }
+
+  batch.update(doc(db, 'appointments', appointment.id), apptPatch);
+  batch.update(doc(db, 'appointmentStatus', appointment.statusLookupId), statusPatch);
+
   if (nextStatus === 'rejected' || nextStatus === 'cancelled') {
     batch.delete(doc(db, 'bookedSlots', appointment.slotLockId));
   }
@@ -444,10 +552,15 @@ export async function upsertDoctor(doctor: Doctor): Promise<void> {
     .filter((s) => s.length >= 3 && s.length <= 20)
     .slice(0, 16);
 
-  const payload: Doctor = {
+  const payload = {
     id: cleanId,
     name: doctor.name.trim().slice(0, 100),
-    specialty: doctor.specialty.trim().slice(0, 100),
+    specialty: doctor.specialty.trim().slice(0, 150),
+    qualification: (doctor.qualification || '').trim().slice(0, 350),
+    nmcNo: (doctor.nmcNo || '').trim().slice(0, 30),
+    opdSchedule: (doctor.opdSchedule || '').trim().slice(0, 100),
+    photoUrl: (doctor.photoUrl || '').trim().slice(0, 150000),
+    clinicalFocus: (doctor.clinicalFocus || '').trim().slice(0, 500),
     departmentId: doctor.departmentId,
     opdFee: Math.max(0, Math.min(50000, Math.round(Number(doctor.opdFee) || 0))),
     isAvailable: Boolean(doctor.isAvailable),
@@ -476,9 +589,10 @@ export async function upsertDepartment(department: Department): Promise<void> {
   if (!VALIDATION_RULES.idPattern.test(cleanId)) {
     throw new Error('Invalid department identifier.');
   }
-  const payload: Department = {
+  const payload = {
     id: cleanId,
-    name: department.name.trim().slice(0, 80),
+    name: department.name.trim().slice(0, 100),
+    nepaliName: (department.nepaliName || '').trim().slice(0, 120),
     summary: department.summary.trim().slice(0, 400),
     careScope: department.careScope.trim().slice(0, 400),
     is24x7: Boolean(department.is24x7),
@@ -499,5 +613,100 @@ export async function removeDepartment(departmentId: string): Promise<void> {
     await deleteDoc(doc(db, 'departments', departmentId));
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, `departments/${departmentId}`);
+  }
+}
+
+export async function fetchPublishedFeedback(): Promise<PatientFeedback[]> {
+  try {
+    const q = query(collection(db, 'feedback'), where('isPublished', '==', true));
+    const snap = await getDocs(q);
+    return snap.docs
+      .map((d) => ({ id: d.id, ...(d.data() as Omit<PatientFeedback, 'id'>) }))
+      .sort((a, b) => {
+        const ta = a.createdAt?.toMillis?.() ?? 0;
+        const tb = b.createdAt?.toMillis?.() ?? 0;
+        return tb - ta;
+      });
+  } catch (error) {
+    console.warn('Could not load published feedback:', error);
+    return [];
+  }
+}
+
+export async function submitPatientFeedback(input: {
+  patientName: string;
+  departmentName: string;
+  doctorName: string;
+  visitType: FeedbackVisitType;
+  rating: number;
+  comment: string;
+}): Promise<PatientFeedback> {
+  const patientName = input.patientName.trim().slice(0, 80);
+  const departmentName = input.departmentName.trim().slice(0, 100);
+  const doctorName = input.doctorName.trim().slice(0, 100);
+  const comment = input.comment.trim().slice(0, VALIDATION_RULES.feedbackCommentMax);
+  const rating = Math.round(Number(input.rating));
+
+  if (patientName.length < 2) {
+    throw new Error('Please enter your name (at least 2 characters).');
+  }
+  if (departmentName.length < 2) {
+    throw new Error('Please select the department or service visited.');
+  }
+  if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
+    throw new Error('Please select a star rating between 1 and 5.');
+  }
+  if (comment.length < VALIDATION_RULES.feedbackCommentMin) {
+    throw new Error('Please enter a brief feedback message (at least 5 characters).');
+  }
+
+  const feedbackId = generateDocId('fb');
+  const payload = {
+    patientName,
+    departmentName,
+    doctorName,
+    visitType: input.visitType,
+    rating,
+    comment,
+    isPublished: true,
+    createdAt: serverTimestamp(),
+  };
+
+  try {
+    await setDoc(doc(db, 'feedback', feedbackId), payload);
+    return {
+      id: feedbackId,
+      patientName,
+      departmentName,
+      doctorName,
+      visitType: input.visitType,
+      rating,
+      comment,
+      isPublished: true,
+      createdAt: null,
+    };
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `feedback/${feedbackId}`);
+  }
+}
+
+export async function adminToggleFeedbackPublish(
+  feedbackId: string,
+  nextPublished: boolean
+): Promise<void> {
+  try {
+    await updateDoc(doc(db, 'feedback', feedbackId), {
+      isPublished: nextPublished,
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, `feedback/${feedbackId}`);
+  }
+}
+
+export async function adminDeleteFeedback(feedbackId: string): Promise<void> {
+  try {
+    await deleteDoc(doc(db, 'feedback', feedbackId));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, `feedback/${feedbackId}`);
   }
 }

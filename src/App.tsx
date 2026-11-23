@@ -4,6 +4,7 @@ import { BookingSection } from './components/BookingSection';
 import { DepartmentsSection } from './components/DepartmentsSection';
 import { DoctorsSection } from './components/DoctorsSection';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { FeedbackSection } from './components/FeedbackSection';
 import { Footer } from './components/Footer';
 import { HealthSearchSection } from './components/HealthSearchSection';
 import { HeroSection } from './components/HeroSection';
@@ -21,6 +22,7 @@ import { StatusLookupSection } from './components/StatusLookupSection';
 import { INITIAL_DEPARTMENTS, INITIAL_DOCTORS } from './data/hospitalCatalog';
 import { fetchPublicCatalog } from './services/hospitalService';
 import type { Department, Doctor, HospitalView } from './types/hospital';
+import { applyViewSeoMetadata } from './utils/seoUtils';
 
 function parseViewFromHash(): HospitalView {
   const hash = window.location.hash.replace('#', '').toLowerCase();
@@ -68,6 +70,10 @@ export default function App() {
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
+
+  useEffect(() => {
+    applyViewSeoMetadata(activeView);
+  }, [activeView]);
 
   const navigate = useCallback((view: HospitalView) => {
     setActiveView(view);
@@ -128,6 +134,7 @@ export default function App() {
                 initialMobile={statusPrefill.mobile}
               />
               <LocationSection />
+              <FeedbackSection departments={departments} doctors={doctors} />
               <HealthSearchSection />
               <FaqSection />
             </>

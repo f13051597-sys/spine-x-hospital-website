@@ -47,7 +47,8 @@ service cloud.firestore {
         'icu',
         'medicine-ward',
         'surgery-ward',
-        'gynecology-ward'
+        'gynecology-ward',
+        'neonatal-pediatrics'
       ];
     }
 
@@ -57,7 +58,8 @@ service cloud.firestore {
         'dr-keshar-bahadur-gurung',
         'dr-sachin-silapkar',
         'dr-laxam-rana-magar',
-        'dr-prem-bahadur-shahi'
+        'dr-prem-bahadur-shahi',
+        'dr-dharmapal-ray'
       ];
     }
 
@@ -79,9 +81,10 @@ service cloud.firestore {
 
     function isValidDepartment(data) {
       return data.keys().hasAll(['id', 'name', 'summary', 'careScope', 'is24x7', 'isActive', 'sortOrder', 'updatedAt'])
-        && data.keys().hasOnly(['id', 'name', 'summary', 'careScope', 'is24x7', 'isActive', 'sortOrder', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'name', 'nepaliName', 'summary', 'careScope', 'is24x7', 'isActive', 'sortOrder', 'updatedAt'])
         && isValidId(data.id)
-        && data.name is string && data.name.size() >= 2 && data.name.size() <= 80
+        && data.name is string && data.name.size() >= 2 && data.name.size() <= 100
+        && (!('nepaliName' in data) || (data.nepaliName is string && data.nepaliName.size() <= 120))
         && data.summary is string && data.summary.size() <= 400
         && data.careScope is string && data.careScope.size() <= 400
         && data.is24x7 is bool
@@ -92,10 +95,15 @@ service cloud.firestore {
 
     function isValidDoctor(data) {
       return data.keys().hasAll(['id', 'name', 'specialty', 'departmentId', 'opdFee', 'isAvailable', 'availableSlots', 'sortOrder', 'updatedAt'])
-        && data.keys().hasOnly(['id', 'name', 'specialty', 'departmentId', 'opdFee', 'isAvailable', 'availableSlots', 'sortOrder', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'name', 'specialty', 'qualification', 'nmcNo', 'opdSchedule', 'photoUrl', 'clinicalFocus', 'departmentId', 'opdFee', 'isAvailable', 'availableSlots', 'sortOrder', 'updatedAt'])
         && isValidId(data.id)
         && data.name is string && data.name.size() >= 2 && data.name.size() <= 100
-        && data.specialty is string && data.specialty.size() <= 100
+        && data.specialty is string && data.specialty.size() <= 150
+        && (!('qualification' in data) || (data.qualification is string && data.qualification.size() <= 350))
+        && (!('nmcNo' in data) || (data.nmcNo is string && data.nmcNo.size() <= 30))
+        && (!('opdSchedule' in data) || (data.opdSchedule is string && data.opdSchedule.size() <= 100))
+        && (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() <= 150000))
+        && (!('clinicalFocus' in data) || (data.clinicalFocus is string && data.clinicalFocus.size() <= 500))
         && isValidId(data.departmentId)
         && data.opdFee is number && data.opdFee >= 0 && data.opdFee <= 50000
         && data.isAvailable is bool
@@ -127,7 +135,9 @@ service cloud.firestore {
           'bookingId', 'patientName', 'mobileNumber', 'age', 'gender',
           'departmentId', 'departmentName', 'doctorId', 'doctorName',
           'opdFee', 'appointmentDate', 'timeSlot', 'reason', 'status',
-          'slotLockId', 'statusLookupId', 'adminNote', 'createdAt', 'updatedAt'
+          'slotLockId', 'statusLookupId', 'adminNote',
+          'reminderTiming', 'reminderChannel', 'reminderStatus',
+          'createdAt', 'updatedAt'
         ])
         && data.bookingId is string && data.bookingId.size() == 15 && data.bookingId.matches('^SXH-[0-9]{4}-[A-Z0-9]{6}$')
         && data.patientName is string && data.patientName.size() >= 2 && data.patientName.size() <= 100
@@ -135,7 +145,7 @@ service cloud.firestore {
         && data.age is number && data.age >= 0 && data.age <= 120
         && data.gender in ['Male', 'Female', 'Other', 'Prefer not to say', '']
         && isValidId(data.departmentId)
-        && data.departmentName is string && data.departmentName.size() >= 2 && data.departmentName.size() <= 80
+        && data.departmentName is string && data.departmentName.size() >= 2 && data.departmentName.size() <= 100
         && isValidId(data.doctorId)
         && data.doctorName is string && data.doctorName.size() >= 2 && data.doctorName.size() <= 100
         && data.opdFee is number && data.opdFee >= 0 && data.opdFee <= 50000
@@ -146,6 +156,9 @@ service cloud.firestore {
         && isValidId(data.slotLockId)
         && isValidSha256Id(data.statusLookupId)
         && data.adminNote is string && data.adminNote.size() <= 300
+        && (!('reminderTiming' in data) || data.reminderTiming in ['24_hours_before', '2_hours_before', 'morning_of_visit', 'none'])
+        && (!('reminderChannel' in data) || data.reminderChannel in ['Calendar & Browser Alert', 'WhatsApp Desk Reminder', 'None'])
+        && (!('reminderStatus' in data) || data.reminderStatus in ['pending', 'sent', 'not_needed'])
         && data.createdAt is timestamp
         && data.updatedAt is timestamp;
     }
@@ -159,19 +172,37 @@ service cloud.firestore {
         && data.keys().hasOnly([
           'bookingId', 'appointmentId', 'patientInitials', 'departmentName',
           'doctorName', 'opdFee', 'appointmentDate', 'timeSlot',
-          'status', 'adminNote', 'updatedAt'
+          'status', 'adminNote',
+          'reminderTiming', 'reminderChannel', 'reminderStatus',
+          'updatedAt'
         ])
         && data.bookingId is string && data.bookingId.size() == 15 && data.bookingId.matches('^SXH-[0-9]{4}-[A-Z0-9]{6}$')
         && isValidId(data.appointmentId)
         && data.patientInitials is string && data.patientInitials.size() >= 1 && data.patientInitials.size() <= 10
-        && data.departmentName is string && data.departmentName.size() >= 2 && data.departmentName.size() <= 80
+        && data.departmentName is string && data.departmentName.size() >= 2 && data.departmentName.size() <= 100
         && data.doctorName is string && data.doctorName.size() >= 2 && data.doctorName.size() <= 100
         && data.opdFee is number && data.opdFee >= 0 && data.opdFee <= 50000
         && isValidDateString(data.appointmentDate)
         && data.timeSlot is string && data.timeSlot.size() >= 3 && data.timeSlot.size() <= 20
         && data.status in ['pending', 'approved', 'rejected', 'completed', 'cancelled']
         && data.adminNote is string && data.adminNote.size() <= 300
+        && (!('reminderTiming' in data) || data.reminderTiming in ['24_hours_before', '2_hours_before', 'morning_of_visit', 'none'])
+        && (!('reminderChannel' in data) || data.reminderChannel in ['Calendar & Browser Alert', 'WhatsApp Desk Reminder', 'None'])
+        && (!('reminderStatus' in data) || data.reminderStatus in ['pending', 'sent', 'not_needed'])
         && data.updatedAt is timestamp;
+    }
+
+    function isValidFeedback(data) {
+      return data.keys().hasAll(['patientName', 'departmentName', 'doctorName', 'visitType', 'rating', 'comment', 'isPublished', 'createdAt'])
+        && data.keys().hasOnly(['patientName', 'departmentName', 'doctorName', 'visitType', 'rating', 'comment', 'isPublished', 'createdAt'])
+        && data.patientName is string && data.patientName.size() >= 2 && data.patientName.size() <= 80
+        && data.departmentName is string && data.departmentName.size() >= 2 && data.departmentName.size() <= 100
+        && data.doctorName is string && data.doctorName.size() <= 100
+        && data.visitType in ['OPD Consultation', 'Emergency / Trauma', 'Inpatient Ward', 'Diagnostics / Lab']
+        && data.rating is number && data.rating >= 1 && data.rating <= 5
+        && data.comment is string && data.comment.size() >= 5 && data.comment.size() <= 500
+        && data.isPublished is bool
+        && data.createdAt is timestamp;
     }
 
     function isValidAdminUser(data) {
@@ -187,7 +218,7 @@ service cloud.firestore {
       allow get: if isValidId(departmentId);
       allow list: if resource.data.isActive == true || isAdmin();
       allow create: if isAdmin() && isValidId(departmentId) && isValidDepartment(incoming()) && incoming().id == departmentId;
-      allow update: if isAdmin() && isValidId(departmentId) && isValidDepartment(incoming()) && incoming().id == existing().id && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'summary', 'careScope', 'is24x7', 'isActive', 'sortOrder', 'updatedAt']);
+      allow update: if isAdmin() && isValidId(departmentId) && isValidDepartment(incoming()) && incoming().id == existing().id && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'nepaliName', 'summary', 'careScope', 'is24x7', 'isActive', 'sortOrder', 'updatedAt']);
       allow delete: if isAdmin() && isValidId(departmentId);
     }
 
@@ -195,7 +226,7 @@ service cloud.firestore {
       allow get: if isValidId(doctorId);
       allow list: if resource.data.isAvailable == true || isAdmin();
       allow create: if isAdmin() && isValidId(doctorId) && isValidDoctor(incoming()) && incoming().id == doctorId;
-      allow update: if isAdmin() && isValidId(doctorId) && isValidDoctor(incoming()) && incoming().id == existing().id && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'specialty', 'departmentId', 'opdFee', 'isAvailable', 'availableSlots', 'sortOrder', 'updatedAt']);
+      allow update: if isAdmin() && isValidId(doctorId) && isValidDoctor(incoming()) && incoming().id == existing().id && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'specialty', 'qualification', 'nmcNo', 'opdSchedule', 'photoUrl', 'clinicalFocus', 'departmentId', 'opdFee', 'isAvailable', 'availableSlots', 'sortOrder', 'updatedAt']);
       allow delete: if isAdmin() && isValidId(doctorId);
     }
 
@@ -234,7 +265,7 @@ service cloud.firestore {
         && incoming().slotLockId == existing().slotLockId
         && incoming().statusLookupId == existing().statusLookupId
         && incoming().updatedAt == request.time
-        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'adminNote', 'updatedAt']);
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'adminNote', 'reminderStatus', 'updatedAt']);
       allow delete: if isAdmin() && isValidId(appointmentId);
     }
 
@@ -253,8 +284,23 @@ service cloud.firestore {
         && incoming().bookingId == existing().bookingId
         && incoming().appointmentId == existing().appointmentId
         && incoming().updatedAt == request.time
-        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'adminNote', 'updatedAt']);
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'adminNote', 'reminderStatus', 'updatedAt']);
       allow delete: if isAdmin() && isValidSha256Id(lookupId);
+    }
+
+    match /feedback/{feedbackId} {
+      allow get: if isValidId(feedbackId) && (resource.data.isPublished == true || isAdmin());
+      allow list: if resource.data.isPublished == true || isAdmin();
+      allow create: if isValidId(feedbackId)
+        && isValidFeedback(incoming())
+        && incoming().isPublished == true
+        && incoming().createdAt == request.time;
+      allow update: if isAdmin()
+        && isValidId(feedbackId)
+        && isValidFeedback(incoming())
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly(['isPublished']);
+      allow delete: if isAdmin() && isValidId(feedbackId);
     }
 
     match /admins/{adminUid} {

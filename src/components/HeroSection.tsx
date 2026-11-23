@@ -1,6 +1,6 @@
 import { ArrowRight, Building2, PhoneCall } from 'lucide-react';
 import { useState } from 'react';
-import { HOSPITAL_INFO } from '../data/hospitalCatalog';
+import { HOSPITAL_INFO, HOSPITAL_PHOTOS } from '../data/hospitalCatalog';
 
 interface HeroSectionProps {
   departmentCount: number;
@@ -16,6 +16,7 @@ export function HeroSection({
   onCheckStatus,
 }: HeroSectionProps) {
   const [imgFailed, setImgFailed] = useState(false);
+  const buildingPhoto = HOSPITAL_PHOTOS[0];
 
   return (
     <section className="bg-white border-b border-slate-200">
@@ -24,9 +25,16 @@ export function HeroSection({
           {/* Left Column */}
           <div className="lg:col-span-6 flex flex-col justify-between space-y-8">
             <div className="space-y-5">
-              <p className="text-sm font-medium text-emerald-800">
-                {HOSPITAL_INFO.address} · {HOSPITAL_INFO.emergencyAvailability}
-              </p>
+              <div className="flex items-center gap-3">
+                <img
+                  src={HOSPITAL_INFO.logoUrl}
+                  alt="Spine X Superspeciality Hospital Logo"
+                  className="h-11 w-auto object-contain rounded border border-slate-200 bg-white px-1.5 py-0.5"
+                />
+                <p className="text-xs sm:text-sm font-medium text-emerald-800">
+                  {HOSPITAL_INFO.address} · {HOSPITAL_INFO.emergencyAvailability}
+                </p>
+              </div>
 
               <h1
                 className="font-display font-bold tracking-tight text-slate-950 leading-[1.12]"
@@ -36,9 +44,9 @@ export function HeroSection({
               </h1>
 
               <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-[60ch]">
-                {HOSPITAL_INFO.name} provides 24/7 emergency trauma response, intensive care,
-                orthopedics, surgery, medicine, and gynecology inpatient wards with transparent
-                online OPD scheduling.
+                {HOSPITAL_INFO.name} provides 24-hour emergency and trauma stabilization, adult,
+                neonatal &amp; pediatric critical care, specialized outpatient departments, and
+                round-the-clock diagnostic and pharmacy support.
               </p>
             </div>
 
@@ -62,19 +70,19 @@ export function HeroSection({
                 </button>
               </div>
 
-              <div className="pt-4 border-t border-slate-200 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-slate-600">
+              <div className="pt-4 border-t border-slate-200 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-slate-600">
                 <a
                   href={HOSPITAL_INFO.phoneHref}
                   className="inline-flex items-center gap-2 font-medium text-[#0F4C81] hover:underline"
                 >
                   <PhoneCall className="w-4 h-4 text-emerald-700" aria-hidden="true" />
-                  <span>24/7 Emergency Helpline:</span>
+                  <span>Emergency:</span>
                   <span className="font-mono tabular-nums font-semibold">
                     {HOSPITAL_INFO.phone}
                   </span>
                 </a>
-                <span className="text-slate-300 hidden sm:inline" aria-hidden="true">
-                  |
+                <span className="font-mono text-xs text-slate-500">
+                  {HOSPITAL_INFO.landlines}
                 </span>
                 <a
                   href={HOSPITAL_INFO.whatsappHref}
@@ -88,16 +96,23 @@ export function HeroSection({
             </div>
           </div>
 
-          {/* Right Column: Architectural Exterior Image */}
-          <div className="lg:col-span-6 min-h-[260px] sm:min-h-[340px] lg:min-h-[420px] rounded-xl overflow-hidden border border-slate-200 bg-slate-100">
+          {/* Right Column: Real Hospital Building Photo */}
+          <div className="lg:col-span-6 min-h-[280px] sm:min-h-[360px] lg:min-h-[430px] rounded-xl overflow-hidden border border-slate-200 bg-slate-100 relative">
             {!imgFailed ? (
-              <img
-                src="/src/assets/images/hero_hospital_exterior_1795364799992.jpg"
-                alt="Spine X Superspeciality Hospital and Trauma Centre Pvt. Ltd. exterior in Birtamode, Jhapa, Nepal"
-                referrerPolicy="no-referrer"
-                onError={() => setImgFailed(true)}
-                className="w-full h-full lg:h-full object-cover"
-              />
+              <>
+                <img
+                  src={buildingPhoto.src}
+                  alt={buildingPhoto.alt}
+                  onError={() => setImgFailed(true)}
+                  className="w-full h-full object-cover object-center"
+                />
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/80 via-slate-950/35 to-transparent p-4 sm:p-5 text-white">
+                  <p className="text-xs font-medium text-emerald-300">{buildingPhoto.subtitle}</p>
+                  <p className="font-display text-sm sm:text-base font-semibold">
+                    {HOSPITAL_INFO.name}
+                  </p>
+                </div>
+              </>
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-sky-50 via-white to-emerald-50 flex flex-col items-center justify-center p-8 text-center">
                 <Building2 className="w-12 h-12 text-[#0F4C81] mb-3" aria-hidden="true" />
@@ -112,22 +127,22 @@ export function HeroSection({
         <div className="mt-10 pt-8 border-t border-slate-200 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <div className="p-4 rounded-lg border border-slate-200 bg-slate-50/70">
             <div className="font-mono tabular-nums text-2xl font-semibold text-[#0F4C81]">24/7</div>
-            <div className="text-sm font-medium text-slate-900 mt-1">Emergency &amp; Trauma</div>
-            <div className="text-xs text-slate-600 mt-0.5">Continuous triage &amp; ICU support</div>
+            <div className="text-sm font-medium text-slate-900 mt-1">Emergency, ICU &amp; Pharmacy</div>
+            <div className="text-xs text-slate-600 mt-0.5">Continuous triage &amp; critical care</div>
           </div>
           <div className="p-4 rounded-lg border border-slate-200 bg-slate-50/70">
             <div className="font-mono tabular-nums text-2xl font-semibold text-[#0F4C81]">
               {departmentCount}
             </div>
             <div className="text-sm font-medium text-slate-900 mt-1">Clinical Departments</div>
-            <div className="text-xs text-slate-600 mt-0.5">Specialized OPD &amp; inpatient wards</div>
+            <div className="text-xs text-slate-600 mt-0.5">Specialized outpatient &amp; surgical care</div>
           </div>
           <div className="p-4 rounded-lg border border-slate-200 bg-slate-50/70">
             <div className="font-mono tabular-nums text-2xl font-semibold text-[#0F4C81]">
               {doctorCount}
             </div>
-            <div className="text-sm font-medium text-slate-900 mt-1">OPD Consultants</div>
-            <div className="text-xs text-slate-600 mt-0.5">Transparent NPR 400–500 fees</div>
+            <div className="text-sm font-medium text-slate-900 mt-1">Consultant Doctors</div>
+            <div className="text-xs text-slate-600 mt-0.5">Verified profiles &amp; slot booking</div>
           </div>
           <a
             href={HOSPITAL_INFO.phoneHref}
@@ -136,8 +151,8 @@ export function HeroSection({
             <div className="font-mono tabular-nums text-2xl font-semibold text-emerald-800">
               {HOSPITAL_INFO.phone}
             </div>
-            <div className="text-sm font-medium text-slate-900 mt-1">Direct Call Desk</div>
-            <div className="text-xs text-emerald-800 mt-0.5">Tap to call emergency desk</div>
+            <div className="text-sm font-medium text-slate-900 mt-1">Direct Helpline</div>
+            <div className="text-xs text-emerald-800 mt-0.5">Tap to call 24/7 desk</div>
           </a>
         </div>
       </div>

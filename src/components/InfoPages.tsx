@@ -1,6 +1,6 @@
 import { ChevronDown, MailCheck, MapPin, MessageCircle, PhoneCall, Shield } from 'lucide-react';
 import { useState } from 'react';
-import { HOSPITAL_FAQS, HOSPITAL_INFO } from '../data/hospitalCatalog';
+import { HOSPITAL_FAQS, HOSPITAL_INFO, HOSPITAL_PHOTOS } from '../data/hospitalCatalog';
 import { LocationSection } from './LocationSection';
 
 export function AboutPage({ onBookNow }: { onBookNow: () => void }) {
@@ -9,7 +9,14 @@ export function AboutPage({ onBookNow }: { onBookNow: () => void }) {
       <section className="py-14 lg:py-20 border-b border-slate-200">
         <div className="max-w-[1200px] mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
           <div className="lg:col-span-7 space-y-6">
-            <p className="text-xs font-medium text-emerald-800">About Our Hospital</p>
+            <div className="flex items-center gap-3">
+              <img
+                src={HOSPITAL_INFO.logoUrl}
+                alt="Spine X Hospital Logo"
+                className="h-12 w-auto object-contain rounded border border-slate-200 bg-white px-2 py-1"
+              />
+              <p className="text-xs font-medium text-emerald-800">About Our Hospital</p>
+            </div>
             <h1
               className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-slate-950"
               style={{ textWrap: 'balance' }}
@@ -17,14 +24,15 @@ export function AboutPage({ onBookNow }: { onBookNow: () => void }) {
               {HOSPITAL_INFO.name}
             </h1>
             <p className="text-base text-slate-600 leading-relaxed">
-              Located in {HOSPITAL_INFO.address}, Spine X Superspeciality Hospital and Trauma Centre
+              Located at {HOSPITAL_INFO.address}, Spine X Superspeciality Hospital &amp; Trauma Center
               Pvt. Ltd. delivers organized outpatient consultation, surgical care, orthopedic and
-              trauma management, intensive care monitoring, and 24/7 emergency medical services for
-              patients across Jhapa and eastern Nepal.
+              spine trauma management, neonatal &amp; pediatric services, intensive monitoring, and
+              24-hour emergency medical services for patients across Jhapa and eastern Nepal.
             </p>
             <p className="text-base text-slate-600 leading-relaxed">
-              Our care model brings together Orthopedics, Emergency, ICU, Medicine Ward, Surgery
-              Ward, and Gynecology Ward services under clear fee transparency and streamlined digital
+              Our integrated clinical campus combines specialized consultation suites, advanced
+              laboratory and imaging services, physiotherapy, ICU/NICU/PICU critical care, inpatient
+              wards, cabin facilities, and 24-hour pharmacy support under streamlined digital
               appointment coordination.
             </p>
 
@@ -45,25 +53,46 @@ export function AboutPage({ onBookNow }: { onBookNow: () => void }) {
             </div>
           </div>
 
-          <div className="lg:col-span-5 bg-slate-50 border border-slate-200 rounded-xl p-6 sm:p-8 space-y-5">
-            <h2 className="font-display text-lg font-semibold text-slate-950">
-              Core Clinical Commitments
-            </h2>
+          <div className="lg:col-span-5 space-y-5">
+            <div className="grid grid-cols-2 gap-3">
+              {HOSPITAL_PHOTOS.slice(0, 2).map((photo) => (
+                <figure
+                  key={photo.id}
+                  className="rounded-xl overflow-hidden border border-slate-200 bg-white"
+                >
+                  <img
+                    src={photo.src}
+                    alt={photo.alt}
+                    className="aspect-[4/3] w-full object-cover object-center"
+                  />
+                  <figcaption className="px-3 py-2 text-xs font-medium text-slate-800">
+                    {photo.title}
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 sm:p-8 space-y-5">
+              <h2 className="font-display text-lg font-semibold text-slate-950">
+                Core Clinical Commitments
+              </h2>
             <ul className="space-y-4 text-sm text-slate-700">
               <li className="pb-4 border-b border-slate-200">
                 <span className="font-semibold text-slate-900 block">
-                  01. Round-the-Clock Emergency Readiness
+                  01. Round-the-Clock Emergency &amp; Pharmacy Readiness
                 </span>
                 <span className="text-slate-600">
-                  24/7 Emergency and ICU facilities prepared for acute trauma and medical admissions.
+                  24-Hour Emergency &amp; Trauma Services, ICU, NICU, PICU, and 24-Hour Pharmacy
+                  access prepared for acute medical and surgical admissions.
                 </span>
               </li>
               <li className="pb-4 border-b border-slate-200">
                 <span className="font-semibold text-slate-900 block">
-                  02. Transparent OPD Consultation Fees
+                  02. Transparent OPD Consultation &amp; Appointment Reminders
                 </span>
                 <span className="text-slate-600">
-                  Clear NPR consultation fee visibility before confirming any outpatient booking.
+                  Clear NPR consultation fees, slot-locked booking, and patient reminder tools
+                  before visiting the hospital desk.
                 </span>
               </li>
               <li>
@@ -75,7 +104,8 @@ export function AboutPage({ onBookNow }: { onBookNow: () => void }) {
                   controls.
                 </span>
               </li>
-            </ul>
+              </ul>
+            </div>
           </div>
         </div>
       </section>
@@ -95,7 +125,7 @@ export function ContactPage({ onBookNow }: { onBookNow: () => void }) {
               Get in Touch with {HOSPITAL_INFO.shortName}
             </h1>
             <p className="text-sm sm:text-base text-slate-600">
-              Reach our hospital reception, 24/7 emergency line, or WhatsApp desk directly.
+              Reach our hospital reception, 24-hour emergency line, or WhatsApp desk directly.
             </p>
           </div>
 
@@ -109,7 +139,9 @@ export function ContactPage({ onBookNow }: { onBookNow: () => void }) {
               <div className="font-mono tabular-nums text-lg font-bold text-[#0F4C81]">
                 {HOSPITAL_INFO.phone}
               </div>
-              <div className="text-xs text-slate-600">Tap to call hospital emergency reception</div>
+              <div className="font-mono text-xs text-slate-600">
+                Landline: {HOSPITAL_INFO.landlines}
+              </div>
             </a>
 
             <a
@@ -220,8 +252,9 @@ export function PrivacyPolicyPage() {
             </h2>
             <p>
               When you submit an appointment request, we collect your name, mobile number, age,
-              optional gender, selected department and doctor, preferred date and time slot, and
-              optional reason for visit solely to coordinate your hospital consultation.
+              optional gender, selected department and doctor, preferred date and time slot, reminder
+              preferences, and optional reason for visit solely to coordinate your hospital
+              consultation.
             </p>
           </div>
 
@@ -258,8 +291,8 @@ export function PrivacyPolicyPage() {
                 For inquiries regarding appointment records or updates, contact the hospital desk at{' '}
                 <a href={HOSPITAL_INFO.phoneHref} className="font-mono font-semibold underline">
                   {HOSPITAL_INFO.phone}
-                </a>
-                .
+                </a>{' '}
+                or <span className="font-mono">{HOSPITAL_INFO.landlines}</span>.
               </span>
             </p>
           </div>

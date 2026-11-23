@@ -9,9 +9,29 @@ export type AppointmentStatusValue =
 
 export type GenderOption = 'Male' | 'Female' | 'Other' | 'Prefer not to say' | '';
 
+export type ReminderTiming =
+  | '24_hours_before'
+  | '2_hours_before'
+  | 'morning_of_visit'
+  | 'none';
+
+export type ReminderChannel =
+  | 'Calendar & Browser Alert'
+  | 'WhatsApp Desk Reminder'
+  | 'None';
+
+export type ReminderStatus = 'pending' | 'sent' | 'not_needed';
+
+export type FeedbackVisitType =
+  | 'OPD Consultation'
+  | 'Emergency / Trauma'
+  | 'Inpatient Ward'
+  | 'Diagnostics / Lab';
+
 export interface Department {
   id: string;
   name: string;
+  nepaliName?: string;
   summary: string;
   careScope: string;
   is24x7: boolean;
@@ -24,6 +44,11 @@ export interface Doctor {
   id: string;
   name: string;
   specialty: string;
+  qualification?: string;
+  nmcNo?: string;
+  opdSchedule?: string;
+  photoUrl?: string;
+  clinicalFocus?: string;
   departmentId: string;
   opdFee: number;
   isAvailable: boolean;
@@ -61,6 +86,9 @@ export interface Appointment {
   slotLockId: string;
   statusLookupId: string;
   adminNote: string;
+  reminderTiming?: ReminderTiming;
+  reminderChannel?: ReminderChannel;
+  reminderStatus?: ReminderStatus;
   createdAt?: Timestamp | null;
   updatedAt?: Timestamp | null;
 }
@@ -76,7 +104,22 @@ export interface AppointmentStatusRecord {
   timeSlot: string;
   status: AppointmentStatusValue;
   adminNote: string;
+  reminderTiming?: ReminderTiming;
+  reminderChannel?: ReminderChannel;
+  reminderStatus?: ReminderStatus;
   updatedAt?: Timestamp | null;
+}
+
+export interface PatientFeedback {
+  id: string;
+  patientName: string;
+  departmentName: string;
+  doctorName: string;
+  visitType: FeedbackVisitType;
+  rating: number;
+  comment: string;
+  isPublished: boolean;
+  createdAt?: Timestamp | null;
 }
 
 export type HospitalView =
