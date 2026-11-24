@@ -63,27 +63,33 @@ export function HealthSearchSection() {
   };
 
   return (
-    <section className="py-14 lg:py-16 bg-white border-b border-slate-200">
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 space-y-6">
-        <div className="space-y-2 max-w-2xl">
-          <p className="text-xs font-medium text-emerald-800">Verified Web Health &amp; Visit Search</p>
+    <section className="py-16 lg:py-20 bg-white border-b border-slate-200/80">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 space-y-7">
+        <div className="space-y-2.5 max-w-2xl">
+          <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">
+            Verified Web Health &amp; Visit Search
+          </p>
           <h2
             className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-slate-950"
             style={{ textWrap: 'balance' }}
           >
             Look Up Up-to-Date Patient &amp; Travel Information
           </h2>
-          <p className="text-sm text-slate-600">
-            Powered by Gemini with live Google Search grounding and source citations. For medical
-            emergencies, always call 9807923351 directly.
+          <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
+            Powered by live Google Search grounding and source citations. For medical emergencies,
+            always call{' '}
+            <a href="tel:9807923351" className="font-mono font-semibold text-[#0F4C81] hover:underline">
+              9807923351
+            </a>{' '}
+            directly.
           </p>
         </div>
 
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 space-y-5">
+        <div className="surface-card rounded-2xl p-6 sm:p-8 bg-slate-50/70 space-y-5">
           <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
               <Search
-                className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
                 aria-hidden="true"
               />
               <input
@@ -91,13 +97,13 @@ export function HealthSearchSection() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Ask about visit preparation, orthopedic recovery guidelines, or Jhapa travel..."
-                className="w-full pl-9 pr-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-[#0F4C81]"
+                className="clinical-input pl-10 pr-3.5 py-2.5 text-sm min-h-[44px]"
               />
             </div>
             <button
               type="submit"
               disabled={loading || query.trim().length < 2}
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-[#0F4C81] text-white text-sm font-medium hover:bg-[#0B3A63] disabled:bg-slate-300 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 rounded-xl bg-[#0F4C81] text-white text-sm font-semibold hover:bg-[#0A365C] disabled:bg-slate-300 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
               <span>Search Web Sources</span>
@@ -110,7 +116,7 @@ export function HealthSearchSection() {
                 key={topic}
                 type="button"
                 onClick={() => void executeSearch(topic)}
-                className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-700 hover:border-[#0F4C81] hover:text-[#0F4C81] transition-colors cursor-pointer"
+                className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-700 hover:border-[#0F4C81] hover:text-[#0F4C81] shadow-2xs transition-colors cursor-pointer text-left"
               >
                 {topic}
               </button>
@@ -120,23 +126,23 @@ export function HealthSearchSection() {
           {errorMsg && (
             <div
               role="alert"
-              className="p-3.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-900 text-xs"
+              className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-medium"
             >
               {errorMsg}
             </div>
           )}
 
           {(answer || sources.length > 0) && (
-            <div className="pt-4 border-t border-slate-200 space-y-4">
+            <div className="pt-5 border-t border-slate-200/80 space-y-4">
               {answer && (
-                <div className="text-sm text-slate-800 leading-relaxed whitespace-pre-line">
+                <div className="text-sm text-slate-800 leading-relaxed whitespace-pre-line bg-white p-5 rounded-xl border border-slate-200/80">
                   {answer}
                 </div>
               )}
 
               {sources.length > 0 && (
-                <div className="space-y-2">
-                  <div className="text-xs font-semibold text-slate-900 flex items-center gap-1.5">
+                <div className="space-y-2.5">
+                  <div className="text-xs font-semibold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
                     <Globe className="w-3.5 h-3.5 text-[#0F4C81]" aria-hidden="true" />
                     <span>Cited Google Search Sources</span>
                   </div>
@@ -148,7 +154,7 @@ export function HealthSearchSection() {
                           href={src.uri}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-medium text-[#0F4C81] hover:border-[#0F4C81]"
+                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-medium text-[#0F4C81] hover:border-[#0F4C81] shadow-2xs transition-colors"
                         >
                           <span className="truncate max-w-[240px]">{src.title}</span>
                           <ExternalLink className="w-3 h-3 shrink-0" aria-hidden="true" />

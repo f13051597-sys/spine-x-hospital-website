@@ -11,14 +11,14 @@ interface FooterProps {
 export function Footer({ onNavigate, onToggleChat, isChatOpen }: FooterProps) {
   return (
     <>
-      <footer className="bg-slate-950 text-slate-300 border-t border-slate-800">
-        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-12 grid grid-cols-1 md:grid-cols-12 gap-8">
-          <div className="md:col-span-5 space-y-3">
-            <div className="flex items-center gap-3">
+      <footer className="bg-[#0B172A] text-slate-300 border-t border-slate-800/90">
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-14 grid grid-cols-1 md:grid-cols-12 gap-10">
+          <div className="md:col-span-5 space-y-4">
+            <div className="flex items-center gap-3.5">
               <img
                 src={HOSPITAL_INFO.logoUrl}
                 alt="Spine X Hospital Logo"
-                className="h-10 w-auto rounded bg-white px-1.5 py-0.5 object-contain"
+                className="h-11 w-auto rounded-lg bg-white px-2 py-1 object-contain shadow-sm"
               />
               <div className="font-display text-base sm:text-lg font-bold text-white leading-snug">
                 {HOSPITAL_INFO.name}
@@ -27,13 +27,13 @@ export function Footer({ onNavigate, onToggleChat, isChatOpen }: FooterProps) {
             <p className="text-sm text-slate-400 leading-relaxed max-w-md">
               {HOSPITAL_INFO.address} · {HOSPITAL_INFO.emergencyAvailability}
             </p>
-            <p className="text-xs font-mono text-slate-400">
-              Tel: {HOSPITAL_INFO.landlines} | Helpline: {HOSPITAL_INFO.phone}
+            <p className="text-xs font-mono tabular-nums text-slate-400">
+              Tel: {HOSPITAL_INFO.landlines} · Helpline: {HOSPITAL_INFO.phone}
             </p>
             <div className="pt-2 flex flex-wrap gap-3">
               <a
                 href={HOSPITAL_INFO.phoneHref}
-                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[#0F4C81] text-white text-xs font-medium hover:bg-[#0B3A63] transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0F4C81] text-white text-xs font-semibold hover:bg-[#145E9E] transition-colors whitespace-nowrap shrink-0"
               >
                 <PhoneCall className="w-3.5 h-3.5" aria-hidden="true" />
                 <span className="font-mono tabular-nums">Call {HOSPITAL_INFO.phone}</span>
@@ -42,7 +42,7 @@ export function Footer({ onNavigate, onToggleChat, isChatOpen }: FooterProps) {
                 href={HOSPITAL_INFO.whatsappHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-emerald-800 text-white text-xs font-medium hover:bg-emerald-700 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-800 text-white text-xs font-semibold hover:bg-emerald-700 transition-colors whitespace-nowrap shrink-0"
               >
                 <MessageCircle className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>WhatsApp Desk</span>
@@ -50,11 +50,9 @@ export function Footer({ onNavigate, onToggleChat, isChatOpen }: FooterProps) {
             </div>
           </div>
 
-          <div className="md:col-span-3 space-y-2.5 text-sm">
-            <div className="font-display font-semibold text-white text-xs uppercase tracking-wider">
-              Patient Services
-            </div>
-            <ul className="space-y-2">
+          <div className="md:col-span-3 space-y-3 text-sm">
+            <div className="font-display font-semibold text-white text-sm">Patient Services</div>
+            <ul className="space-y-2.5">
               {(
                 [
                   { id: 'departments', label: 'Departments' },
@@ -69,7 +67,7 @@ export function Footer({ onNavigate, onToggleChat, isChatOpen }: FooterProps) {
                   <button
                     type="button"
                     onClick={() => onNavigate(item.id)}
-                    className="text-slate-400 hover:text-white transition-colors cursor-pointer"
+                    className="text-slate-400 hover:text-white transition-colors cursor-pointer text-left"
                   >
                     {item.label}
                   </button>
@@ -78,11 +76,11 @@ export function Footer({ onNavigate, onToggleChat, isChatOpen }: FooterProps) {
             </ul>
           </div>
 
-          <div className="md:col-span-4 space-y-2.5 text-sm">
-            <div className="font-display font-semibold text-white text-xs uppercase tracking-wider">
+          <div className="md:col-span-4 space-y-3 text-sm">
+            <div className="font-display font-semibold text-white text-sm">
               Hospital Information
             </div>
-            <ul className="space-y-2">
+            <ul className="space-y-2.5">
               {(
                 [
                   { id: 'about', label: 'About Us' },
@@ -96,7 +94,7 @@ export function Footer({ onNavigate, onToggleChat, isChatOpen }: FooterProps) {
                   <button
                     type="button"
                     onClick={() => onNavigate(item.id)}
-                    className="text-slate-400 hover:text-white transition-colors cursor-pointer"
+                    className="text-slate-400 hover:text-white transition-colors cursor-pointer text-left"
                   >
                     {item.label}
                   </button>
@@ -107,7 +105,7 @@ export function Footer({ onNavigate, onToggleChat, isChatOpen }: FooterProps) {
         </div>
 
         <div className="border-t border-slate-800/80">
-          <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
+          <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-5 pb-20 sm:pb-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-400">
             <span>
               &copy; {new Date().getFullYear()} {HOSPITAL_INFO.name}
             </span>
@@ -116,12 +114,12 @@ export function Footer({ onNavigate, onToggleChat, isChatOpen }: FooterProps) {
         </div>
       </footer>
 
-      {/* Compact Quick-Action Floating Controls (within 15% mobile cap) */}
+      {/* Compact Quick-Action Floating Controls (within 15% mobile height cap) */}
       <div className="fixed bottom-4 right-4 z-40 flex items-center gap-2 print:hidden">
         <a
           href={HOSPITAL_INFO.phoneHref}
           aria-label={`Call 24/7 Emergency ${HOSPITAL_INFO.phone}`}
-          className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-lg bg-[#0F4C81] text-white text-xs font-semibold shadow-md hover:bg-[#0B3A63] transition-colors"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#0F4C81] text-white text-xs font-semibold shadow-lg hover:bg-[#0A365C] transition-all whitespace-nowrap shrink-0"
         >
           <PhoneCall className="w-4 h-4" aria-hidden="true" />
           <span className="hidden sm:inline font-mono tabular-nums">{HOSPITAL_INFO.phone}</span>
@@ -132,7 +130,7 @@ export function Footer({ onNavigate, onToggleChat, isChatOpen }: FooterProps) {
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Contact Spine X Hospital on WhatsApp"
-          className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-lg bg-emerald-700 text-white text-xs font-semibold shadow-md hover:bg-emerald-800 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-emerald-700 text-white text-xs font-semibold shadow-lg hover:bg-emerald-800 transition-all whitespace-nowrap shrink-0"
         >
           <MessageCircle className="w-4 h-4" aria-hidden="true" />
           <span className="hidden sm:inline">WhatsApp</span>
@@ -142,7 +140,7 @@ export function Footer({ onNavigate, onToggleChat, isChatOpen }: FooterProps) {
           onClick={onToggleChat}
           aria-expanded={isChatOpen}
           aria-label={isChatOpen ? 'Close Hospital Assistant' : 'Open Hospital Assistant'}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg bg-slate-900 text-white text-xs font-semibold shadow-md hover:bg-slate-800 transition-colors cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-semibold shadow-lg hover:bg-slate-800 transition-all cursor-pointer whitespace-nowrap shrink-0"
         >
           <MessageSquareText className="w-4 h-4" aria-hidden="true" />
           <span>Assistant</span>

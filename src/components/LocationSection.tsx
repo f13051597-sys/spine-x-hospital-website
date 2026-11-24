@@ -161,50 +161,53 @@ export function LocationSection() {
   };
 
   return (
-    <section className="py-14 lg:py-20 bg-white border-b border-slate-200">
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 space-y-8">
-        <div className="space-y-2 max-w-2xl">
-          <p className="text-xs font-medium text-emerald-800">Hospital Location &amp; Google Maps</p>
+    <section className="py-16 lg:py-24 bg-white border-b border-slate-200/80">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 space-y-10">
+        <div className="space-y-2.5 max-w-2xl">
+          <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">
+            Hospital Location &amp; Google Maps
+          </p>
           <h2
-            className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-slate-950"
+            className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-950"
             style={{ textWrap: 'balance' }}
           >
             Visit Spine X Hospital in Birtamode, Jhapa
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-          <div className="lg:col-span-5 bg-slate-50 border border-slate-200 rounded-xl p-6 sm:p-8 flex flex-col justify-between space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch">
+          <div className="lg:col-span-5 surface-card rounded-2xl p-6 sm:p-8 flex flex-col justify-between space-y-6 bg-slate-50/60">
             <div className="space-y-5">
               <div>
-                <h3 className="font-display text-lg font-semibold text-slate-950">
+                <h3 className="font-display text-lg font-bold text-slate-950">
                   {HOSPITAL_INFO.name}
                 </h3>
-                <p className="text-sm text-slate-600 mt-1">
+                <p className="text-sm text-slate-600 mt-1.5 leading-relaxed">
                   Serving Birtamode, Jhapa, and eastern Nepal with 24/7 emergency trauma care and
                   outpatient specialist consultations.
                 </p>
               </div>
 
-              <div className="space-y-4 pt-4 border-t border-slate-200 text-sm">
-                <div className="flex items-start gap-3">
-                  <MapPin className="w-5 h-5 text-[#0F4C81] shrink-0 mt-0.5" aria-hidden="true" />
+              <div className="space-y-4 pt-5 border-t border-slate-200/80 text-sm">
+                <div className="flex items-start gap-3.5">
+                  <div className="w-9 h-9 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center shrink-0">
+                    <MapPin className="w-4.5 h-4.5 text-[#0F4C81]" aria-hidden="true" />
+                  </div>
                   <div>
-                    <div className="font-medium text-slate-900">Hospital Address</div>
-                    <div className="text-slate-600">{HOSPITAL_INFO.address}</div>
+                    <div className="font-semibold text-slate-900">Hospital Address</div>
+                    <div className="text-slate-600 mt-0.5">{HOSPITAL_INFO.address}</div>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-3">
-                  <PhoneCall
-                    className="w-5 h-5 text-emerald-700 shrink-0 mt-0.5"
-                    aria-hidden="true"
-                  />
+                <div className="flex items-start gap-3.5">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0">
+                    <PhoneCall className="w-4.5 h-4.5 text-emerald-700" aria-hidden="true" />
+                  </div>
                   <div>
-                    <div className="font-medium text-slate-900">24/7 Emergency &amp; OPD Desk</div>
+                    <div className="font-semibold text-slate-900">24/7 Emergency &amp; OPD Desk</div>
                     <a
                       href={HOSPITAL_INFO.phoneHref}
-                      className="font-mono tabular-nums font-semibold text-[#0F4C81] hover:underline"
+                      className="font-mono tabular-nums font-bold text-[#0F4C81] hover:underline mt-0.5 inline-block"
                     >
                       {HOSPITAL_INFO.phone}
                     </a>
@@ -218,7 +221,7 @@ export function LocationSection() {
                 href={HOSPITAL_INFO.mapsQueryUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#0F4C81] text-white text-sm font-medium hover:bg-[#0B3A63] transition-colors"
+                className="inline-flex items-center justify-center gap-2 min-h-[44px] px-4 py-2.5 rounded-xl bg-[#0F4C81] text-white text-sm font-semibold hover:bg-[#0A365C] shadow-xs transition-all"
               >
                 <span>Open Directions in Google Maps</span>
                 <ExternalLink className="w-4 h-4" aria-hidden="true" />
@@ -228,15 +231,15 @@ export function LocationSection() {
                 href={HOSPITAL_INFO.whatsappHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-emerald-700 bg-emerald-50 text-emerald-900 text-sm font-medium hover:bg-emerald-100 transition-colors"
+                className="inline-flex items-center justify-center gap-2 min-h-[44px] px-4 py-2.5 rounded-xl border border-emerald-600/30 bg-emerald-50 text-emerald-900 text-sm font-semibold hover:bg-emerald-100 transition-all"
               >
-                <MessageCircle className="w-4 h-4" aria-hidden="true" />
+                <MessageCircle className="w-4 h-4 text-emerald-700" aria-hidden="true" />
                 <span>Message on WhatsApp</span>
               </a>
             </div>
           </div>
 
-          <div className="lg:col-span-7 min-h-[360px] lg:min-h-[420px] rounded-xl overflow-hidden border border-slate-200 bg-slate-100">
+          <div className="lg:col-span-7 min-h-[360px] lg:min-h-[420px] rounded-2xl overflow-hidden border border-slate-200/90 bg-slate-100 shadow-sm">
             {mapsApiKey ? (
               <InteractiveHospitalMap apiKey={mapsApiKey} />
             ) : (
@@ -252,14 +255,14 @@ export function LocationSection() {
         </div>
 
         {/* Google Maps Grounding Explorer */}
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 sm:p-7 space-y-5">
+        <div className="surface-card rounded-2xl p-6 sm:p-8 bg-slate-50/70 space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h3 className="font-display text-base font-semibold text-slate-950 flex items-center gap-2">
-                <Compass className="w-4 h-4 text-[#0F4C81]" aria-hidden="true" />
+            <div className="space-y-1">
+              <h3 className="font-display text-base sm:text-lg font-bold text-slate-950 flex items-center gap-2">
+                <Compass className="w-4.5 h-4.5 text-[#0F4C81]" aria-hidden="true" />
                 <span>Nearby Places &amp; Transit Guide (Google Maps Data)</span>
               </h3>
-              <p className="text-xs text-slate-600 mt-0.5">
+              <p className="text-xs sm:text-sm text-slate-600">
                 Explore verified pharmacies, transit stops, and patient-family accommodations around
                 Birtamode using Google Maps Grounding.
               </p>
@@ -269,23 +272,21 @@ export function LocationSection() {
               type="button"
               onClick={handleUseMyLocation}
               disabled={locating}
-              className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-700 hover:bg-slate-100 cursor-pointer whitespace-nowrap shrink-0"
+              className="self-start sm:self-auto inline-flex items-center gap-1.5 min-h-[38px] px-3.5 py-2 rounded-xl border border-slate-300 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors cursor-pointer whitespace-nowrap shrink-0"
             >
               {locating ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-[#0F4C81]" aria-hidden="true" />
               ) : (
                 <Navigation className="w-3.5 h-3.5 text-[#0F4C81]" aria-hidden="true" />
               )}
-              <span>
-                {userCoords ? 'Location Active' : 'Use My Location'}
-              </span>
+              <span>{userCoords ? 'Location Active' : 'Use My Location'}</span>
             </button>
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
               <Search
-                className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
                 aria-hidden="true"
               />
               <input
@@ -293,13 +294,13 @@ export function LocationSection() {
                 value={mapsQuery}
                 onChange={(e) => setMapsQuery(e.target.value)}
                 placeholder="Ask about nearby pharmacies, bus parks, ATMs, or lodges in Birtamode..."
-                className="w-full pl-9 pr-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-[#0F4C81]"
+                className="clinical-input pl-10 pr-3.5 py-2.5 text-sm min-h-[44px]"
               />
             </div>
             <button
               type="submit"
               disabled={mapsLoading || mapsQuery.trim().length < 2}
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-[#0F4C81] text-white text-sm font-medium hover:bg-[#0B3A63] disabled:bg-slate-300 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 rounded-xl bg-[#0F4C81] text-white text-sm font-semibold hover:bg-[#0A365C] disabled:bg-slate-300 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             >
               {mapsLoading && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
               <span>Find Nearby</span>
@@ -312,7 +313,7 @@ export function LocationSection() {
                 key={preset}
                 type="button"
                 onClick={() => void runMapsGrounding(preset)}
-                className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-700 hover:border-[#0F4C81] hover:text-[#0F4C81] transition-colors cursor-pointer"
+                className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-700 hover:border-[#0F4C81] hover:text-[#0F4C81] shadow-2xs transition-colors cursor-pointer text-left"
               >
                 {preset}
               </button>
@@ -322,26 +323,26 @@ export function LocationSection() {
           {mapsError && (
             <div
               role="alert"
-              className="p-3.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-900 text-xs"
+              className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-medium"
             >
               {mapsError}
             </div>
           )}
 
           {(mapsAnswer || mapsPlaces.length > 0) && (
-            <div className="pt-4 border-t border-slate-200 space-y-4">
+            <div className="pt-5 border-t border-slate-200/80 space-y-4">
               {mapsAnswer && (
-                <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+                <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-line bg-white p-4 rounded-xl border border-slate-200/80">
                   {mapsAnswer}
                 </div>
               )}
 
               {mapsPlaces.length > 0 && (
-                <div className="space-y-2.5">
-                  <div className="text-xs font-semibold text-slate-900">
+                <div className="space-y-3">
+                  <div className="text-xs font-semibold uppercase tracking-wider text-slate-600">
                     Google Maps Places &amp; Directions Links
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                     {mapsPlaces.map((place) =>
                       isSafeHttpUrl(place.uri) ? (
                         <a
@@ -349,16 +350,16 @@ export function LocationSection() {
                           href={place.uri}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="p-3.5 rounded-lg border border-slate-200 bg-white hover:border-[#0F4C81] transition-colors block space-y-1.5"
+                          className="surface-card surface-card-hover p-4 rounded-xl block space-y-1.5"
                         >
                           <div className="flex items-center justify-between gap-2">
-                            <span className="font-medium text-sm text-[#0F4C81]">
+                            <span className="font-semibold text-sm text-[#0F4C81]">
                               {place.title}
                             </span>
                             <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                           </div>
                           {place.snippets.map((snippet, idx) => (
-                            <p key={idx} className="text-xs text-slate-600 line-clamp-2">
+                            <p key={idx} className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
                               “{snippet}”
                             </p>
                           ))}

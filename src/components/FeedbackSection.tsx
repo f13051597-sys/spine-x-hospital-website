@@ -91,35 +91,37 @@ export function FeedbackSection({ departments, doctors }: FeedbackSectionProps) 
   };
 
   return (
-    <section className="py-14 lg:py-20 bg-white border-b border-slate-200">
+    <section className="py-16 lg:py-24 bg-slate-50/50 border-b border-slate-200/80">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 space-y-10">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div className="space-y-2 max-w-2xl">
-            <p className="text-xs font-medium text-emerald-800">Patient Experience</p>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-5">
+          <div className="space-y-2.5 max-w-2xl">
+            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">
+              Patient Experience
+            </p>
             <h2
-              className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-slate-950"
+              className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-950"
               style={{ textWrap: 'balance' }}
             >
               Patient Feedback &amp; Care Reviews
             </h2>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
               Share your hospital experience to help our medical and nursing teams improve patient
               care in Birtamode.
             </p>
           </div>
 
           {averageRating && (
-            <div className="px-4 py-3 rounded-xl border border-emerald-200 bg-emerald-50/70 flex items-center gap-3 self-start md:self-auto">
-              <div className="flex items-center gap-1 text-amber-500">
+            <div className="surface-card px-5 py-3.5 rounded-2xl border-emerald-200/80 bg-emerald-50/50 flex items-center gap-3.5 self-start md:self-auto">
+              <div className="flex items-center gap-1.5 text-amber-500">
                 <Star className="w-5 h-5 fill-amber-400 text-amber-500" aria-hidden="true" />
-                <span className="font-mono tabular-nums text-lg font-bold text-slate-950">
+                <span className="font-mono tabular-nums text-xl font-bold text-slate-950">
                   {averageRating}
                 </span>
               </div>
-              <div className="text-xs text-slate-700">
-                Based on{' '}
-                <span className="font-mono font-semibold">{feedbackList.length}</span> verified{' '}
-                {feedbackList.length === 1 ? 'review' : 'reviews'}
+              <div className="text-xs text-slate-700 leading-snug">
+                Average rating from{' '}
+                <span className="font-mono font-bold text-slate-950">{feedbackList.length}</span>{' '}
+                verified {feedbackList.length === 1 ? 'review' : 'reviews'}
               </div>
             </div>
           )}
@@ -129,17 +131,21 @@ export function FeedbackSection({ departments, doctors }: FeedbackSectionProps) 
           {/* Submit Feedback Form */}
           <form
             onSubmit={handleSubmit}
-            className="lg:col-span-5 bg-slate-50 border border-slate-200 rounded-xl p-6 space-y-4"
+            className="lg:col-span-5 surface-card rounded-2xl p-6 sm:p-7 space-y-4.5"
           >
-            <h3 className="font-display text-base font-semibold text-slate-950 flex items-center gap-2">
-              <MessageSquareHeart className="w-4 h-4 text-[#0F4C81]" aria-hidden="true" />
-              <span>Share Your Patient Feedback</span>
-            </h3>
+            <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
+              <div className="w-8 h-8 rounded-lg bg-sky-50 border border-sky-100 flex items-center justify-center">
+                <MessageSquareHeart className="w-4 h-4 text-[#0F4C81]" aria-hidden="true" />
+              </div>
+              <h3 className="font-display text-base font-bold text-slate-950">
+                Share Your Patient Feedback
+              </h3>
+            </div>
 
             {submitError && (
               <div
                 role="alert"
-                className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-900 text-xs flex items-start gap-2"
+                className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-xs flex items-start gap-2"
               >
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
                 <span>{submitError}</span>
@@ -149,7 +155,7 @@ export function FeedbackSection({ departments, doctors }: FeedbackSectionProps) 
             {submitSuccess && (
               <div
                 role="status"
-                className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-start gap-2"
+                className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-start gap-2"
               >
                 <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
                 <span>Thank you for your feedback. Your review has been recorded.</span>
@@ -159,7 +165,7 @@ export function FeedbackSection({ departments, doctors }: FeedbackSectionProps) 
             <div>
               <label
                 htmlFor="feedback-name"
-                className="block text-xs font-medium text-slate-800 mb-1"
+                className="block text-xs font-semibold text-slate-800 mb-1.5"
               >
                 Your Name <span className="text-rose-600">*</span>
               </label>
@@ -172,15 +178,15 @@ export function FeedbackSection({ departments, doctors }: FeedbackSectionProps) 
                 value={patientName}
                 onChange={(e) => setPatientName(e.target.value)}
                 placeholder="e.g. Sita Rai"
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-[#0F4C81]"
+                className="clinical-input px-3.5 py-2.5 text-sm min-h-[42px]"
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div>
                 <label
                   htmlFor="feedback-visit-type"
-                  className="block text-xs font-medium text-slate-800 mb-1"
+                  className="block text-xs font-semibold text-slate-800 mb-1.5"
                 >
                   Service Type <span className="text-rose-600">*</span>
                 </label>
@@ -188,7 +194,7 @@ export function FeedbackSection({ departments, doctors }: FeedbackSectionProps) 
                   id="feedback-visit-type"
                   value={visitType}
                   onChange={(e) => setVisitType(e.target.value as FeedbackVisitType)}
-                  className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-[#0F4C81]"
+                  className="clinical-input px-3 py-2.5 text-sm min-h-[42px]"
                 >
                   {VISIT_TYPES.map((vt) => (
                     <option key={vt} value={vt}>
@@ -201,7 +207,7 @@ export function FeedbackSection({ departments, doctors }: FeedbackSectionProps) 
               <div>
                 <label
                   htmlFor="feedback-department"
-                  className="block text-xs font-medium text-slate-800 mb-1"
+                  className="block text-xs font-semibold text-slate-800 mb-1.5"
                 >
                   Department / Unit <span className="text-rose-600">*</span>
                 </label>
@@ -209,7 +215,7 @@ export function FeedbackSection({ departments, doctors }: FeedbackSectionProps) 
                   id="feedback-department"
                   value={departmentName}
                   onChange={(e) => setDepartmentName(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-[#0F4C81]"
+                  className="clinical-input px-3 py-2.5 text-sm min-h-[42px]"
                 >
                   {departments.map((d) => (
                     <option key={d.id} value={d.name}>
@@ -227,7 +233,7 @@ export function FeedbackSection({ departments, doctors }: FeedbackSectionProps) 
             <div>
               <label
                 htmlFor="feedback-doctor"
-                className="block text-xs font-medium text-slate-800 mb-1"
+                className="block text-xs font-semibold text-slate-800 mb-1.5"
               >
                 Doctor Consulted (Optional)
               </label>
@@ -235,7 +241,7 @@ export function FeedbackSection({ departments, doctors }: FeedbackSectionProps) 
                 id="feedback-doctor"
                 value={doctorName}
                 onChange={(e) => setDoctorName(e.target.value)}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-[#0F4C81]"
+                className="clinical-input px-3.5 py-2.5 text-sm min-h-[42px]"
               >
                 <option value="">General Hospital Experience</option>
                 {doctors.map((doc) => (
@@ -247,7 +253,7 @@ export function FeedbackSection({ departments, doctors }: FeedbackSectionProps) 
             </div>
 
             <div>
-              <span className="block text-xs font-medium text-slate-800 mb-1.5">
+              <span className="block text-xs font-semibold text-slate-800 mb-1.5">
                 Rating <span className="text-rose-600">*</span>
               </span>
               <div className="flex items-center gap-1.5">
@@ -259,7 +265,11 @@ export function FeedbackSection({ departments, doctors }: FeedbackSectionProps) 
                       type="button"
                       onClick={() => setRating(starVal)}
                       aria-label={`Rate ${starVal} out of 5 stars`}
-                      className="p-1.5 rounded-md border border-slate-200 bg-white hover:border-amber-400 cursor-pointer"
+                      className={`p-2 rounded-xl border transition-colors cursor-pointer ${
+                        active
+                          ? 'border-amber-300 bg-amber-50/70'
+                          : 'border-slate-200 bg-white hover:border-amber-300'
+                      }`}
                     >
                       <Star
                         className={`w-5 h-5 ${
@@ -269,14 +279,16 @@ export function FeedbackSection({ departments, doctors }: FeedbackSectionProps) 
                     </button>
                   );
                 })}
-                <span className="ml-2 text-xs font-mono text-slate-600">{rating}/5</span>
+                <span className="ml-2 text-xs font-mono font-semibold text-slate-600">
+                  {rating}/5
+                </span>
               </div>
             </div>
 
             <div>
               <label
                 htmlFor="feedback-comment"
-                className="block text-xs font-medium text-slate-800 mb-1"
+                className="block text-xs font-semibold text-slate-800 mb-1.5"
               >
                 Feedback Message <span className="text-rose-600">*</span>
               </label>
@@ -289,14 +301,14 @@ export function FeedbackSection({ departments, doctors }: FeedbackSectionProps) 
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 placeholder="Share your experience with consultation, nursing care, cleanliness, or registration..."
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-[#0F4C81]"
+                className="clinical-input px-3.5 py-2.5 text-sm"
               />
             </div>
 
             <button
               type="submit"
               disabled={submitting}
-              className="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-[#0F4C81] text-white text-sm font-medium hover:bg-[#0B3A63] disabled:bg-slate-300 transition-colors cursor-pointer"
+              className="w-full inline-flex items-center justify-center gap-2 min-h-[46px] px-5 py-2.5 rounded-xl bg-[#0F4C81] text-white text-sm font-semibold hover:bg-[#0A365C] disabled:bg-slate-300 shadow-xs transition-colors cursor-pointer"
             >
               {submitting && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
               <span>{submitting ? 'Submitting...' : 'Submit Feedback'}</span>
@@ -306,13 +318,13 @@ export function FeedbackSection({ departments, doctors }: FeedbackSectionProps) 
           {/* Published Patient Feedback Cards */}
           <div className="lg:col-span-7 space-y-4">
             {loadingList ? (
-              <div className="p-10 border border-slate-200 rounded-xl bg-slate-50 flex items-center justify-center gap-2 text-sm text-slate-600">
+              <div className="surface-card p-10 rounded-2xl flex items-center justify-center gap-2.5 text-sm text-slate-600">
                 <Loader2 className="w-4 h-4 animate-spin text-[#0F4C81]" aria-hidden="true" />
                 <span>Loading patient reviews...</span>
               </div>
             ) : feedbackList.length === 0 ? (
-              <div className="p-10 border border-slate-200 rounded-xl bg-slate-50 text-center space-y-2">
-                <p className="font-display font-semibold text-slate-900">
+              <div className="surface-card p-10 rounded-2xl text-center space-y-2">
+                <p className="font-display font-bold text-slate-900">
                   No published patient reviews yet
                 </p>
                 <p className="text-sm text-slate-600 max-w-md mx-auto">
@@ -325,20 +337,20 @@ export function FeedbackSection({ departments, doctors }: FeedbackSectionProps) 
                 {feedbackList.slice(0, 6).map((item) => (
                   <article
                     key={item.id}
-                    className="p-5 rounded-xl border border-slate-200 bg-white space-y-3"
+                    className="surface-card surface-card-hover p-5 sm:p-6 rounded-2xl space-y-3"
                   >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
                       <div>
-                        <h4 className="font-display font-semibold text-slate-950 text-sm">
+                        <h4 className="font-display font-bold text-slate-950 text-sm sm:text-base">
                           {item.patientName}
                         </h4>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-slate-500 mt-0.5">
                           {item.visitType} · {item.departmentName}
                           {item.doctorName ? ` · ${item.doctorName}` : ''}
                         </p>
                       </div>
                       <div
-                        className="flex items-center gap-0.5"
+                        className="flex items-center gap-0.5 pt-0.5"
                         aria-label={`Rated ${item.rating} out of 5`}
                       >
                         {[1, 2, 3, 4, 5].map((n) => (

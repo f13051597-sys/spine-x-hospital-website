@@ -377,15 +377,15 @@ export function BookingSection({
   };
 
   return (
-    <section className="py-14 lg:py-20 bg-white border-b border-slate-200">
+    <section className="py-16 lg:py-22 bg-white border-b border-slate-200/80">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-          {/* Left Context & Instructions */}
-          <div className="lg:col-span-5 space-y-6">
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-emerald-800">Online OPD Registration</p>
+          {/* Left Context & Live Summary */}
+          <div className="lg:col-span-5 lg:sticky lg:top-24 space-y-6">
+            <div className="space-y-2.5">
+              <p className="text-xs font-semibold text-emerald-800">Online OPD Registration</p>
               <h2
-                className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-slate-950"
+                className="font-display text-2xl sm:text-3xl lg:text-[34px] font-bold tracking-tight text-slate-950"
                 style={{ textWrap: 'balance' }}
               >
                 Book Your Hospital Appointment
@@ -396,14 +396,18 @@ export function BookingSection({
               </p>
             </div>
 
-            <div className="p-6 rounded-xl border border-slate-200 bg-slate-50 space-y-4">
-              <h3 className="font-display text-sm font-semibold text-slate-900">
-                OPD Booking Summary
-              </h3>
+            <div className="surface-card rounded-2xl p-6 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 className="font-display text-sm font-bold text-slate-950">
+                  OPD Booking Summary
+                </h3>
+                <span className="text-xs font-medium text-emerald-800">Live Preview</span>
+              </div>
+
               <dl className="space-y-3 text-sm">
                 <div className="flex items-center justify-between gap-4">
                   <dt className="text-slate-500">Hospital</dt>
-                  <dd className="font-medium text-slate-900 text-right">
+                  <dd className="font-semibold text-slate-900 text-right">
                     {HOSPITAL_INFO.shortName}, Birtamode
                   </dd>
                 </div>
@@ -415,13 +419,22 @@ export function BookingSection({
                 </div>
                 <div className="flex items-center justify-between gap-4">
                   <dt className="text-slate-500">Consultant</dt>
-                  <dd className="font-medium text-slate-900 text-right">
+                  <dd className="font-semibold text-slate-900 text-right">
                     {selectedDoctor?.name || '—'}
                   </dd>
                 </div>
-                <div className="flex items-center justify-between gap-4 pt-3 border-t border-slate-200">
-                  <dt className="text-slate-700 font-medium">OPD Consultation Fee</dt>
-                  <dd className="font-mono tabular-nums text-base font-bold text-[#0F4C81]">
+                {appointmentDate && (
+                  <div className="flex items-center justify-between gap-4">
+                    <dt className="text-slate-500">Date &amp; Slot</dt>
+                    <dd className="font-mono tabular-nums text-xs font-medium text-slate-800 text-right">
+                      {appointmentDate}
+                      {timeSlot ? ` · ${timeSlot}` : ''}
+                    </dd>
+                  </div>
+                )}
+                <div className="flex items-center justify-between gap-4 pt-3 border-t border-slate-100">
+                  <dt className="text-slate-700 font-semibold">OPD Consultation Fee</dt>
+                  <dd className="font-mono tabular-nums text-lg font-bold text-[#0F4C81]">
                     {selectedDoctor
                       ? selectedDoctor.opdFee > 0
                         ? `NPR ${selectedDoctor.opdFee}`
@@ -432,9 +445,11 @@ export function BookingSection({
               </dl>
             </div>
 
-            <div className="p-5 rounded-xl border border-emerald-200 bg-emerald-50/60 space-y-2 text-sm">
-              <p className="font-semibold text-emerald-950">Need Urgent Trauma or Emergency Care?</p>
-              <p className="text-emerald-900">
+            <div className="p-5 rounded-2xl border border-emerald-200 bg-emerald-50/60 space-y-2 text-sm">
+              <p className="font-display font-bold text-emerald-950">
+                Need Urgent Trauma or Emergency Care?
+              </p>
+              <p className="text-emerald-900 leading-relaxed">
                 Do not wait for an OPD slot in an emergency. Call our 24/7 Emergency Desk directly
                 at{' '}
                 <a href={HOSPITAL_INFO.phoneHref} className="font-mono font-bold underline">
@@ -448,14 +463,13 @@ export function BookingSection({
           {/* Right Form or Confirmation Card */}
           <div className="lg:col-span-7">
             {confirmation ? (
-              <div className="bg-white border border-emerald-300 rounded-xl p-6 sm:p-8 space-y-6">
-                <div className="flex items-start gap-3">
-                  <CheckCircle2
-                    className="w-7 h-7 text-emerald-700 shrink-0 mt-0.5"
-                    aria-hidden="true"
-                  />
+              <div className="surface-card rounded-2xl border-emerald-200 p-6 sm:p-8 space-y-6">
+                <div className="flex items-start gap-3.5">
+                  <div className="w-11 h-11 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center shrink-0">
+                    <CheckCircle2 className="w-6 h-6 text-emerald-700" aria-hidden="true" />
+                  </div>
                   <div className="space-y-1">
-                    <p className="text-xs font-medium text-emerald-800">
+                    <p className="text-xs font-semibold text-emerald-800">
                       Appointment Request Recorded
                     </p>
                     <h3 className="font-display text-2xl font-bold text-slate-950">
@@ -464,10 +478,10 @@ export function BookingSection({
                   </div>
                 </div>
 
-                <div className="p-5 rounded-lg bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <div className="text-xs text-slate-500">Unique Booking ID</div>
-                    <div className="font-mono tabular-nums text-xl font-bold text-[#0F4C81] mt-0.5">
+                    <div className="text-xs font-medium text-slate-500">Unique Booking ID</div>
+                    <div className="font-mono tabular-nums text-xl sm:text-2xl font-bold text-[#0F4C81] mt-0.5">
                       {confirmation.bookingId}
                     </div>
                   </div>
@@ -475,7 +489,7 @@ export function BookingSection({
                     <button
                       type="button"
                       onClick={handleCopyBookingId}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-800 hover:bg-slate-50 cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-300 bg-white text-xs font-semibold text-slate-800 hover:bg-slate-50 transition-colors cursor-pointer"
                     >
                       <Copy className="w-3.5 h-3.5" aria-hidden="true" />
                       <span>{copiedId ? 'Copied' : 'Copy ID'}</span>
@@ -483,7 +497,7 @@ export function BookingSection({
                     <button
                       type="button"
                       onClick={() => window.print()}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-800 hover:bg-slate-50 cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-300 bg-white text-xs font-semibold text-slate-800 hover:bg-slate-50 transition-colors cursor-pointer"
                     >
                       <Printer className="w-3.5 h-3.5" aria-hidden="true" />
                       <span>Print</span>
@@ -494,11 +508,13 @@ export function BookingSection({
                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm pt-2">
                   <div>
                     <dt className="text-xs text-slate-500">Patient Name</dt>
-                    <dd className="font-medium text-slate-900 mt-0.5">{confirmation.patientName}</dd>
+                    <dd className="font-semibold text-slate-900 mt-0.5">
+                      {confirmation.patientName}
+                    </dd>
                   </div>
                   <div>
                     <dt className="text-xs text-slate-500">Verified Mobile Number</dt>
-                    <dd className="font-mono tabular-nums font-medium text-slate-900 mt-0.5">
+                    <dd className="font-mono tabular-nums font-semibold text-slate-900 mt-0.5">
                       {confirmation.mobileNumber}
                     </dd>
                   </div>
@@ -524,7 +540,7 @@ export function BookingSection({
                         ? 'Online OPD Payment (Fonepay QR)'
                         : 'OPD Fee (Pay at Hospital)'}
                     </dt>
-                    <dd className="font-mono tabular-nums font-semibold text-[#0F4C81] mt-0.5">
+                    <dd className="font-mono tabular-nums font-bold text-[#0F4C81] mt-0.5">
                       {confirmation.opdFee > 0
                         ? `NPR ${confirmation.opdFee}`
                         : 'Confirm at OPD Desk'}
@@ -534,13 +550,13 @@ export function BookingSection({
                     <>
                       <div>
                         <dt className="text-xs text-slate-500">Payment Reference</dt>
-                        <dd className="font-mono font-semibold text-slate-900 mt-0.5">
+                        <dd className="font-mono font-bold text-slate-900 mt-0.5">
                           {confirmation.paymentRef}
                         </dd>
                       </div>
                       <div>
                         <dt className="text-xs text-slate-500">Transaction ID &amp; Status</dt>
-                        <dd className="text-xs font-medium text-amber-800 mt-0.5">
+                        <dd className="text-xs font-semibold text-amber-800 mt-0.5">
                           <span className="font-mono text-slate-900 mr-1.5">
                             {confirmation.transactionId}
                           </span>
@@ -552,7 +568,7 @@ export function BookingSection({
                 </dl>
 
                 {confirmation.paymentRef && (
-                  <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="p-4 rounded-xl bg-amber-50/80 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <p className="text-xs text-amber-950 leading-relaxed">
                       Your Fonepay payment is currently <strong>Pending Verification</strong>. Your
                       appointment will be approved automatically once our Accounts Desk or Fonepay
@@ -568,7 +584,7 @@ export function BookingSection({
                       })}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-700 text-white text-xs font-medium hover:bg-emerald-800 shrink-0"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-700 text-white text-xs font-semibold hover:bg-emerald-800 shrink-0"
                     >
                       <MessageCircle className="w-3.5 h-3.5" aria-hidden="true" />
                       <span>WhatsApp Receipt</span>
@@ -577,7 +593,7 @@ export function BookingSection({
                 )}
 
                 {/* Appointment Reminder Controls */}
-                <div className="p-4 rounded-xl bg-sky-50/70 border border-sky-200 space-y-3">
+                <div className="p-5 rounded-xl bg-sky-50/70 border border-sky-200 space-y-3">
                   <div className="flex items-center gap-2 text-sm font-semibold text-[#0F4C81]">
                     <Bell className="w-4 h-4 shrink-0" aria-hidden="true" />
                     <span>
@@ -597,7 +613,7 @@ export function BookingSection({
                           reminderTiming: confirmation.reminderTiming,
                         })
                       }
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-sky-300 text-xs font-medium text-[#0F4C81] hover:bg-sky-100 cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-sky-300 text-xs font-semibold text-[#0F4C81] hover:bg-sky-100 cursor-pointer"
                     >
                       <CalendarPlus className="w-3.5 h-3.5" aria-hidden="true" />
                       <span>Add Calendar Reminder (.ics)</span>
@@ -606,7 +622,7 @@ export function BookingSection({
                     <button
                       type="button"
                       onClick={handleEnableBrowserReminder}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-slate-300 text-xs font-medium text-slate-800 hover:bg-slate-50 cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-xs font-semibold text-slate-800 hover:bg-slate-50 cursor-pointer"
                     >
                       <Bell className="w-3.5 h-3.5" aria-hidden="true" />
                       <span>Enable Browser Alert</span>
@@ -621,7 +637,7 @@ export function BookingSection({
                       })}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-700 text-white text-xs font-medium hover:bg-emerald-800"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-700 text-white text-xs font-semibold hover:bg-emerald-800"
                     >
                       <MessageCircle className="w-3.5 h-3.5" aria-hidden="true" />
                       <span>WhatsApp Desk</span>
@@ -643,7 +659,7 @@ export function BookingSection({
                     onClick={() =>
                       onGoToStatusCheck(confirmation.bookingId, confirmation.mobileNumber)
                     }
-                    className="px-5 py-2.5 rounded-lg bg-[#0F4C81] text-white text-sm font-medium hover:bg-[#0B3A63] cursor-pointer"
+                    className="px-5 py-2.5 rounded-xl bg-[#0F4C81] text-white text-sm font-semibold hover:bg-[#0A365C] transition-colors cursor-pointer"
                   >
                     Check Appointment Status
                   </button>
@@ -651,7 +667,7 @@ export function BookingSection({
                     <button
                       type="button"
                       onClick={onOpenDashboard}
-                      className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg border border-[#0F4C81] text-[#0F4C81] bg-white text-sm font-medium hover:bg-sky-50 cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl border border-[#0F4C81] text-[#0F4C81] bg-white text-sm font-semibold hover:bg-sky-50 transition-colors cursor-pointer"
                     >
                       <LayoutDashboard className="w-4 h-4" aria-hidden="true" />
                       <span>Open Patient Dashboard</span>
@@ -660,7 +676,7 @@ export function BookingSection({
                   <button
                     type="button"
                     onClick={handleReset}
-                    className="px-5 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-800 text-sm font-medium hover:bg-slate-50 cursor-pointer"
+                    className="px-5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-800 text-sm font-semibold hover:bg-slate-50 transition-colors cursor-pointer"
                   >
                     Book Another Appointment
                   </button>
@@ -669,12 +685,22 @@ export function BookingSection({
             ) : (
               <form
                 onSubmit={handleSubmit}
-                className="bg-white border border-slate-200 rounded-xl p-6 sm:p-8 space-y-6"
+                className="surface-card rounded-2xl p-6 sm:p-8 space-y-6"
               >
+                <div className="border-b border-slate-100 pb-4">
+                  <h3 className="font-display text-lg font-bold text-slate-950">
+                    Patient &amp; Consultation Details
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Fields marked with <span className="text-rose-600">*</span> are required to
+                    lock your OPD slot.
+                  </p>
+                </div>
+
                 {errorMsg && (
                   <div
                     role="alert"
-                    className="p-4 rounded-lg bg-rose-50 border border-rose-200 text-rose-900 text-sm flex items-start gap-2.5"
+                    className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-sm flex items-start gap-2.5"
                   >
                     <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-rose-700" aria-hidden="true" />
                     <span>{errorMsg}</span>
@@ -685,7 +711,7 @@ export function BookingSection({
                   <div className="sm:col-span-2">
                     <label
                       htmlFor="booking-patient-name"
-                      className="block text-sm font-medium text-slate-800 mb-1.5"
+                      className="block text-sm font-semibold text-slate-800 mb-1.5"
                     >
                       Patient Full Name <span className="text-rose-600">*</span>
                     </label>
@@ -698,14 +724,14 @@ export function BookingSection({
                       value={patientName}
                       onChange={(e) => setPatientName(e.target.value)}
                       placeholder="Enter patient's full name"
-                      className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-[#0F4C81]"
+                      className="clinical-input px-3.5 py-2.5 text-sm"
                     />
                   </div>
 
                   <div>
                     <label
                       htmlFor="booking-mobile"
-                      className="block text-sm font-medium text-slate-800 mb-1.5"
+                      className="block text-sm font-semibold text-slate-800 mb-1.5"
                     >
                       Mobile Number <span className="text-rose-600">*</span>
                     </label>
@@ -716,7 +742,7 @@ export function BookingSection({
                       value={mobileNumber}
                       onChange={(e) => setMobileNumber(e.target.value)}
                       placeholder="e.g. 98XXXXXXXX"
-                      className="w-full px-3.5 py-2.5 text-sm font-mono border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-[#0F4C81]"
+                      className="clinical-input px-3.5 py-2.5 text-sm font-mono"
                     />
                   </div>
 
@@ -724,7 +750,7 @@ export function BookingSection({
                     <div>
                       <label
                         htmlFor="booking-age"
-                        className="block text-sm font-medium text-slate-800 mb-1.5"
+                        className="block text-sm font-semibold text-slate-800 mb-1.5"
                       >
                         Age <span className="text-rose-600">*</span>
                       </label>
@@ -737,14 +763,14 @@ export function BookingSection({
                         value={age}
                         onChange={(e) => setAge(e.target.value)}
                         placeholder="Years"
-                        className="w-full px-3.5 py-2.5 text-sm font-mono tabular-nums border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-[#0F4C81]"
+                        className="clinical-input px-3.5 py-2.5 text-sm font-mono tabular-nums"
                       />
                     </div>
 
                     <div>
                       <label
                         htmlFor="booking-gender"
-                        className="block text-sm font-medium text-slate-800 mb-1.5"
+                        className="block text-sm font-semibold text-slate-800 mb-1.5"
                       >
                         Gender
                       </label>
@@ -752,7 +778,7 @@ export function BookingSection({
                         id="booking-gender"
                         value={gender}
                         onChange={(e) => setGender(e.target.value as GenderOption)}
-                        className="w-full px-3 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:border-[#0F4C81]"
+                        className="clinical-input px-3 py-2.5 text-sm"
                       >
                         <option value="">Optional</option>
                         <option value="Male">Male</option>
@@ -766,7 +792,7 @@ export function BookingSection({
                   <div>
                     <label
                       htmlFor="booking-department"
-                      className="block text-sm font-medium text-slate-800 mb-1.5"
+                      className="block text-sm font-semibold text-slate-800 mb-1.5"
                     >
                       Select Department <span className="text-rose-600">*</span>
                     </label>
@@ -775,7 +801,7 @@ export function BookingSection({
                       required
                       value={departmentId}
                       onChange={(e) => setDepartmentId(e.target.value)}
-                      className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:border-[#0F4C81]"
+                      className="clinical-input px-3.5 py-2.5 text-sm"
                     >
                       {departments.map((dept) => (
                         <option key={dept.id} value={dept.id}>
@@ -788,7 +814,7 @@ export function BookingSection({
                   <div>
                     <label
                       htmlFor="booking-doctor"
-                      className="block text-sm font-medium text-slate-800 mb-1.5"
+                      className="block text-sm font-semibold text-slate-800 mb-1.5"
                     >
                       Select Doctor <span className="text-rose-600">*</span>
                     </label>
@@ -797,7 +823,7 @@ export function BookingSection({
                       required
                       value={selectedDoctor?.id || ''}
                       onChange={(e) => handleDoctorChange(e.target.value)}
-                      className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:border-[#0F4C81]"
+                      className="clinical-input px-3.5 py-2.5 text-sm"
                     >
                       {availableDoctors.map((doc) => (
                         <option key={doc.id} value={doc.id}>
@@ -811,7 +837,7 @@ export function BookingSection({
                   <div className="sm:col-span-2">
                     <label
                       htmlFor="booking-date"
-                      className="block text-sm font-medium text-slate-800 mb-1.5"
+                      className="block text-sm font-semibold text-slate-800 mb-1.5"
                     >
                       Appointment Date <span className="text-rose-600">*</span>
                     </label>
@@ -825,15 +851,15 @@ export function BookingSection({
                         setAppointmentDate(e.target.value);
                         setTimeSlot('');
                       }}
-                      className="w-full px-3.5 py-2.5 text-sm font-mono tabular-nums border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-[#0F4C81]"
+                      className="clinical-input px-3.5 py-2.5 text-sm font-mono tabular-nums"
                     />
                   </div>
                 </div>
 
                 {/* Time Slot Grid */}
-                <div className="space-y-2.5">
+                <div className="space-y-3 pt-1">
                   <div className="flex items-center justify-between">
-                    <span className="block text-sm font-medium text-slate-800">
+                    <span className="block text-sm font-semibold text-slate-800">
                       Select Available Time Slot <span className="text-rose-600">*</span>
                     </span>
                     {loadingSlots && (
@@ -845,7 +871,7 @@ export function BookingSection({
                   </div>
 
                   {doctorSlots.length === 0 ? (
-                    <p className="text-sm text-slate-600 p-4 rounded-lg bg-slate-50 border border-slate-200">
+                    <p className="text-sm text-slate-600 p-4 rounded-xl bg-slate-50 border border-slate-200">
                       No online slots are currently configured for this doctor. Please call{' '}
                       {HOSPITAL_INFO.phone} to schedule.
                     </p>
@@ -860,12 +886,12 @@ export function BookingSection({
                             type="button"
                             disabled={isBooked || loadingSlots}
                             onClick={() => setTimeSlot(slot)}
-                            className={`px-3 py-2.5 rounded-lg border text-xs font-mono tabular-nums font-medium transition-colors flex flex-col items-center justify-center gap-0.5 ${
+                            className={`px-3 py-2.5 min-h-[44px] rounded-xl border text-xs font-mono tabular-nums font-semibold transition-all flex flex-col items-center justify-center gap-0.5 ${
                               isBooked
                                 ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed line-through'
                                 : isSelected
-                                  ? 'bg-[#0F4C81] border-[#0F4C81] text-white cursor-pointer'
-                                  : 'bg-white border-slate-300 text-slate-800 hover:border-[#0F4C81] hover:bg-sky-50 cursor-pointer'
+                                  ? 'bg-[#0F4C81] border-[#0F4C81] text-white shadow-sm cursor-pointer'
+                                  : 'bg-white border-slate-300 text-slate-800 hover:border-[#0F4C81] hover:bg-sky-50/70 cursor-pointer'
                             }`}
                           >
                             <span className="inline-flex items-center gap-1">
@@ -885,7 +911,7 @@ export function BookingSection({
                 </div>
 
                 {/* Appointment Reminder Options */}
-                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 sm:p-5 rounded-xl bg-slate-50/90 border border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label
                       htmlFor="booking-reminder-timing"
@@ -897,7 +923,7 @@ export function BookingSection({
                       id="booking-reminder-timing"
                       value={reminderTiming}
                       onChange={(e) => setReminderTiming(e.target.value as ReminderTiming)}
-                      className="w-full px-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:border-[#0F4C81]"
+                      className="clinical-input px-3 py-2 text-xs sm:text-sm"
                     >
                       <option value="24_hours_before">24 hours before visit</option>
                       <option value="2_hours_before">2 hours before visit</option>
@@ -918,7 +944,7 @@ export function BookingSection({
                       disabled={reminderTiming === 'none'}
                       value={reminderTiming === 'none' ? 'None' : reminderChannel}
                       onChange={(e) => setReminderChannel(e.target.value as ReminderChannel)}
-                      className="w-full px-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-lg bg-white text-slate-900 disabled:bg-slate-100 focus:outline-none focus:border-[#0F4C81]"
+                      className="clinical-input px-3 py-2 text-xs sm:text-sm disabled:bg-slate-100"
                     >
                       <option value="Calendar & Browser Alert">Calendar &amp; Browser Alert</option>
                       <option value="WhatsApp Desk Reminder">WhatsApp Desk Reminder</option>
@@ -929,7 +955,7 @@ export function BookingSection({
                 <div>
                   <label
                     htmlFor="booking-reason"
-                    className="block text-sm font-medium text-slate-800 mb-1.5"
+                    className="block text-sm font-semibold text-slate-800 mb-1.5"
                   >
                     Reason for Visit (Optional)
                   </label>
@@ -940,16 +966,16 @@ export function BookingSection({
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                     placeholder="Briefly describe symptoms or consultation purpose..."
-                    className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-[#0F4C81]"
+                    className="clinical-input px-3.5 py-2.5 text-sm"
                   />
                 </div>
 
                 {/* Integrated Appointment Payment Section */}
                 {canPayOnline && selectedDoctor && (
-                  <div className="p-5 rounded-xl border border-slate-200 bg-slate-50 space-y-4">
+                  <div className="p-5 rounded-2xl border border-slate-200 bg-slate-50/80 space-y-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <div>
-                        <h3 className="font-display text-sm font-semibold text-slate-950">
+                        <h3 className="font-display text-sm font-bold text-slate-950">
                           OPD Consultation Payment
                         </h3>
                         <p className="text-xs text-slate-600">
@@ -957,19 +983,19 @@ export function BookingSection({
                           hospital OPD desk.
                         </p>
                       </div>
-                      <span className="font-mono text-sm font-bold text-[#0F4C81] shrink-0">
+                      <span className="font-mono tabular-nums text-sm font-bold text-[#0F4C81] shrink-0">
                         Fee: NPR {selectedDoctor.opdFee}
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <button
                         type="button"
                         onClick={() => setPaymentMethod('fonepay_qr')}
-                        className={`p-3 rounded-lg border text-left transition-colors cursor-pointer ${
+                        className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
                           effectivePaymentMethod === 'fonepay_qr'
-                            ? 'bg-white border-[#0F4C81] ring-1 ring-[#0F4C81]'
-                            : 'bg-white/70 border-slate-300 hover:border-slate-400'
+                            ? 'bg-white border-[#0F4C81] ring-1 ring-[#0F4C81] shadow-xs'
+                            : 'bg-white/75 border-slate-300 hover:border-slate-400'
                         }`}
                       >
                         <div className="flex items-center gap-2 text-xs font-semibold text-slate-900">
@@ -984,10 +1010,10 @@ export function BookingSection({
                       <button
                         type="button"
                         onClick={() => setPaymentMethod('pay_at_desk')}
-                        className={`p-3 rounded-lg border text-left transition-colors cursor-pointer ${
+                        className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
                           effectivePaymentMethod === 'pay_at_desk'
-                            ? 'bg-white border-[#0F4C81] ring-1 ring-[#0F4C81]'
-                            : 'bg-white/70 border-slate-300 hover:border-slate-400'
+                            ? 'bg-white border-[#0F4C81] ring-1 ring-[#0F4C81] shadow-xs'
+                            : 'bg-white/75 border-slate-300 hover:border-slate-400'
                         }`}
                       >
                         <div className="text-xs font-semibold text-slate-900">
@@ -1000,9 +1026,9 @@ export function BookingSection({
                     </div>
 
                     {effectivePaymentMethod === 'fonepay_qr' && (
-                      <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-4">
+                      <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 space-y-4">
                         {/* Payment Context Summary */}
-                        <div className="p-3 rounded-lg bg-sky-50/70 border border-sky-200 grid grid-cols-2 gap-2 text-xs">
+                        <div className="p-3.5 rounded-xl bg-sky-50/70 border border-sky-200 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                           <div>
                             <span className="text-slate-500">Doctor:</span>{' '}
                             <span className="font-semibold text-slate-900">
@@ -1011,7 +1037,7 @@ export function BookingSection({
                           </div>
                           <div>
                             <span className="text-slate-500">Fee:</span>{' '}
-                            <span className="font-mono font-bold text-[#0F4C81]">
+                            <span className="font-mono tabular-nums font-bold text-[#0F4C81]">
                               NPR {selectedDoctor.opdFee}
                             </span>
                           </div>
@@ -1030,22 +1056,22 @@ export function BookingSection({
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
-                          <div className="sm:col-span-5 flex flex-col items-center p-2 rounded-lg border border-slate-200 bg-slate-50">
+                          <div className="sm:col-span-5 flex flex-col items-center p-3 rounded-xl border border-slate-200 bg-slate-50">
                             <img
                               src={FONEPAY_MERCHANT_INFO.qrImageUrl}
                               alt="Official Spine X Hospital Fonepay QR"
-                              className="w-full max-w-[190px] h-auto rounded object-contain"
+                              className="w-full max-w-[190px] h-auto rounded-lg object-contain"
                             />
-                            <p className="text-[10px] font-mono text-slate-600 mt-1.5 text-center">
+                            <p className="text-[10px] font-mono text-slate-600 mt-2 text-center">
                               Terminal: {FONEPAY_MERCHANT_INFO.terminalId}
                             </p>
                           </div>
 
-                          <div className="sm:col-span-7 space-y-3">
+                          <div className="sm:col-span-7 space-y-3.5">
                             <div>
                               <label
                                 htmlFor="booking-tx-id"
-                                className="block text-xs font-semibold text-slate-800 mb-1"
+                                className="block text-xs font-semibold text-slate-800 mb-1.5"
                               >
                                 Fonepay Transaction ID <span className="text-rose-600">*</span>
                               </label>
@@ -1062,15 +1088,15 @@ export function BookingSection({
                                 }}
                                 onBlur={handleTransactionBlur}
                                 placeholder="e.g. FNP12345678"
-                                className="w-full px-3 py-2 text-xs sm:text-sm font-mono uppercase border border-slate-300 rounded-lg focus:outline-none focus:border-[#0F4C81]"
+                                className="clinical-input px-3 py-2 text-xs sm:text-sm font-mono uppercase"
                               />
                               {txCheckStatus === 'available' && (
-                                <p className="text-[11px] text-emerald-700 mt-1">
+                                <p className="text-[11px] font-medium text-emerald-700 mt-1">
                                   Unique Transaction ID ready.
                                 </p>
                               )}
                               {txCheckStatus === 'duplicate' && (
-                                <p className="text-[11px] text-rose-700 font-medium mt-1">
+                                <p className="text-[11px] text-rose-700 font-semibold mt-1">
                                   Duplicate Transaction ID already submitted.
                                 </p>
                               )}
@@ -1082,7 +1108,7 @@ export function BookingSection({
                               </span>
                               <div className="flex items-center gap-3">
                                 {screenshotDataUrl && (
-                                  <div className="relative w-14 h-14 rounded-lg overflow-hidden border border-slate-300 shrink-0">
+                                  <div className="relative w-14 h-14 rounded-xl overflow-hidden border border-slate-300 shrink-0">
                                     <img
                                       src={screenshotDataUrl}
                                       alt="Receipt thumbnail"
@@ -1101,7 +1127,7 @@ export function BookingSection({
                                     </button>
                                   </div>
                                 )}
-                                <label className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 bg-slate-50 text-xs font-medium text-slate-800 hover:bg-slate-100 cursor-pointer">
+                                <label className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-50 text-xs font-semibold text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer">
                                   {uploadingScreenshot ? (
                                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
                                   ) : (
@@ -1139,7 +1165,7 @@ export function BookingSection({
                     availableDoctors.length === 0 ||
                     (effectivePaymentMethod === 'fonepay_qr' && txCheckStatus === 'duplicate')
                   }
-                  className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg bg-[#0F4C81] text-white text-sm font-semibold hover:bg-[#0B3A63] disabled:bg-slate-300 transition-colors cursor-pointer disabled:cursor-not-allowed"
+                  className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 min-h-[48px] rounded-xl bg-[#0F4C81] text-white text-sm font-semibold shadow-[0_6px_18px_-4px_rgba(15,76,129,0.4)] hover:bg-[#0A365C] disabled:bg-slate-300 disabled:shadow-none transition-all cursor-pointer disabled:cursor-not-allowed"
                 >
                   {submitting && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
                   <span>

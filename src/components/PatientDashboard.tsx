@@ -19,6 +19,7 @@ import {
   X,
   XCircle,
 } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { HOSPITAL_INFO } from '../data/hospitalCatalog';
 import { auth, googleProvider } from '../lib/firebase';
@@ -553,15 +554,15 @@ export function PatientDashboard({
   };
 
   return (
-    <section className="py-12 lg:py-16 bg-slate-50 min-h-[80vh] border-b border-slate-200">
+    <section className="py-12 lg:py-16 bg-slate-50 min-h-[80vh] border-b border-slate-200/80">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 space-y-8">
         {/* Header & Auth Controls */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-6">
-          <div className="space-y-1">
-            <p className="text-xs font-medium text-emerald-800">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200/80 pb-6">
+          <div className="space-y-1.5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">
               Private Patient Portal · Spine X Hospital
             </p>
-            <h1 className="font-display text-2xl sm:text-3xl font-bold text-slate-950">
+            <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-slate-950">
               Patient Appointments, Payments &amp; Refunds
             </h1>
             <p className="text-sm text-slate-600">
@@ -575,7 +576,7 @@ export function PatientDashboard({
               type="button"
               onClick={() => void hydrateSavedAndSignedIn()}
               disabled={loadingSaved}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer"
+              className="inline-flex items-center gap-1.5 min-h-[40px] px-3.5 py-2 rounded-xl border border-slate-300 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs transition-colors cursor-pointer whitespace-nowrap shrink-0"
             >
               <RefreshCw
                 className={`w-3.5 h-3.5 ${loadingSaved ? 'animate-spin' : ''}`}
@@ -588,7 +589,7 @@ export function PatientDashboard({
               <button
                 type="button"
                 onClick={() => void signOut(auth)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-800 hover:bg-slate-50 cursor-pointer"
+                className="inline-flex items-center gap-1.5 min-h-[40px] px-3.5 py-2 rounded-xl border border-slate-300 bg-white text-xs font-semibold text-slate-800 hover:bg-slate-50 shadow-2xs transition-colors cursor-pointer whitespace-nowrap shrink-0"
               >
                 <LogOut className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>Sign Out ({user.email?.split('@')[0]})</span>
@@ -597,7 +598,7 @@ export function PatientDashboard({
               <button
                 type="button"
                 onClick={() => void signInWithPopup(auth, googleProvider)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#0F4C81] text-white text-xs font-medium hover:bg-[#0B3A63] cursor-pointer"
+                className="inline-flex items-center gap-1.5 min-h-[40px] px-4 py-2 rounded-xl bg-[#0F4C81] text-white text-xs font-semibold hover:bg-[#0A365C] shadow-xs transition-colors cursor-pointer whitespace-nowrap shrink-0"
               >
                 <ShieldCheck className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>Sign In with Google</span>
@@ -609,11 +610,11 @@ export function PatientDashboard({
         {/* Verified Reference Lookup Bar */}
         <form
           onSubmit={handleVerifiedLookup}
-          className="bg-white border border-slate-200 rounded-xl p-5 space-y-4"
+          className="surface-card rounded-2xl p-5 sm:p-6 space-y-4"
         >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div>
-              <h2 className="font-display text-sm font-semibold text-slate-950">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div className="space-y-0.5">
+              <h2 className="font-display text-sm sm:text-base font-bold text-slate-950">
                 Verify &amp; Load Any Booking or Payment Record
               </h2>
               <p className="text-xs text-slate-600">
@@ -621,19 +622,21 @@ export function PatientDashboard({
                 <span className="font-mono">PAY-...</span>) along with your registered mobile number.
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-3 shrink-0">
               <button
                 type="button"
                 onClick={onNavigateToBook}
-                className="text-xs font-medium text-[#0F4C81] hover:underline cursor-pointer"
+                className="text-xs font-semibold text-[#0F4C81] hover:underline cursor-pointer whitespace-nowrap"
               >
                 + New Appointment
               </button>
-              <span className="text-slate-300">|</span>
+              <span className="text-slate-300" aria-hidden="true">
+                |
+              </span>
               <button
                 type="button"
                 onClick={onNavigateToPay}
-                className="text-xs font-medium text-emerald-800 hover:underline cursor-pointer"
+                className="text-xs font-semibold text-emerald-700 hover:underline cursor-pointer whitespace-nowrap"
               >
                 + Pay Hospital Bill
               </button>
@@ -648,7 +651,7 @@ export function PatientDashboard({
               onChange={(e) => setLookupRefId(e.target.value.toUpperCase())}
               placeholder="SXH-2026-XXXXXX or PAY-2026-XXXXXX"
               aria-label="Booking ID or Payment Ref"
-              className="sm:col-span-5 px-3.5 py-2.5 text-sm font-mono uppercase border border-slate-300 rounded-lg focus:outline-none focus:border-[#0F4C81]"
+              className="clinical-input sm:col-span-5 px-3.5 py-2.5 text-sm font-mono uppercase min-h-[44px]"
             />
             <input
               type="tel"
@@ -657,12 +660,12 @@ export function PatientDashboard({
               onChange={(e) => setLookupMobile(e.target.value)}
               placeholder="Registered Mobile Number (e.g. 98XXXXXXXX)"
               aria-label="Registered Mobile Number"
-              className="sm:col-span-4 px-3.5 py-2.5 text-sm font-mono border border-slate-300 rounded-lg focus:outline-none focus:border-[#0F4C81]"
+              className="clinical-input sm:col-span-4 px-3.5 py-2.5 text-sm font-mono min-h-[44px]"
             />
             <button
               type="submit"
               disabled={lookupLoading}
-              className="sm:col-span-3 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#0F4C81] text-white text-sm font-medium hover:bg-[#0B3A63] disabled:bg-slate-300 cursor-pointer"
+              className="sm:col-span-3 inline-flex items-center justify-center gap-2 min-h-[44px] px-4 py-2.5 rounded-xl bg-[#0F4C81] text-white text-sm font-semibold hover:bg-[#0A365C] disabled:bg-slate-300 transition-colors cursor-pointer"
             >
               {lookupLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -677,13 +680,13 @@ export function PatientDashboard({
         {(errorMsg || successMsg) && (
           <div
             role="status"
-            className={`p-4 rounded-xl border text-sm flex items-center justify-between gap-3 ${
+            className={`p-4 rounded-2xl border text-sm flex items-center justify-between gap-3 shadow-2xs ${
               errorMsg
                 ? 'bg-rose-50 border-rose-200 text-rose-900'
                 : 'bg-emerald-50 border-emerald-200 text-emerald-900'
             }`}
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               {errorMsg ? (
                 <AlertCircle className="w-4 h-4 shrink-0" />
               ) : (
@@ -698,7 +701,7 @@ export function PatientDashboard({
                 setSuccessMsg(null);
               }}
               aria-label="Close message"
-              className="cursor-pointer"
+              className="p-1 rounded-lg hover:bg-black/5 cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -706,63 +709,65 @@ export function PatientDashboard({
         )}
 
         {/* Section Tabs */}
-        <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-200/70 rounded-lg w-fit">
-          <button
-            type="button"
-            onClick={() => setActiveTab('appointments')}
-            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors cursor-pointer ${
-              activeTab === 'appointments'
-                ? 'bg-white text-slate-950 shadow-sm'
-                : 'text-slate-600 hover:text-slate-950'
-            }`}
-          >
-            <CalendarCheck className="w-4 h-4 text-[#0F4C81]" aria-hidden="true" />
-            <span>My Appointments ({unifiedAppointments.length})</span>
-          </button>
+        <div className="max-w-full overflow-x-auto pb-1">
+          <div className="inline-flex items-center gap-1.5 p-1 bg-slate-200/75 rounded-xl">
+            <button
+              type="button"
+              onClick={() => setActiveTab('appointments')}
+              className={`inline-flex items-center gap-2 min-h-[38px] px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+                activeTab === 'appointments'
+                  ? 'bg-white text-slate-950 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-950'
+              }`}
+            >
+              <CalendarCheck className="w-4 h-4 text-[#0F4C81]" aria-hidden="true" />
+              <span>My Appointments ({unifiedAppointments.length})</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('payments')}
-            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors cursor-pointer ${
-              activeTab === 'payments'
-                ? 'bg-white text-slate-950 shadow-sm'
-                : 'text-slate-600 hover:text-slate-950'
-            }`}
-          >
-            <CreditCard className="w-4 h-4 text-[#0F4C81]" aria-hidden="true" />
-            <span>Payment History ({unifiedPayments.length})</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('payments')}
+              className={`inline-flex items-center gap-2 min-h-[38px] px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+                activeTab === 'payments'
+                  ? 'bg-white text-slate-950 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-950'
+              }`}
+            >
+              <CreditCard className="w-4 h-4 text-[#0F4C81]" aria-hidden="true" />
+              <span>Payment History ({unifiedPayments.length})</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('refunds')}
-            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors cursor-pointer ${
-              activeTab === 'refunds'
-                ? 'bg-white text-slate-950 shadow-sm'
-                : 'text-slate-600 hover:text-slate-950'
-            }`}
-          >
-            <RotateCcw className="w-4 h-4 text-[#0F4C81]" aria-hidden="true" />
-            <span>Refund Requests &amp; Status ({unifiedRefunds.length})</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('refunds')}
+              className={`inline-flex items-center gap-2 min-h-[38px] px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+                activeTab === 'refunds'
+                  ? 'bg-white text-slate-950 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-950'
+              }`}
+            >
+              <RotateCcw className="w-4 h-4 text-[#0F4C81]" aria-hidden="true" />
+              <span>Refund Requests &amp; Status ({unifiedRefunds.length})</span>
+            </button>
+          </div>
         </div>
 
         {/* TAB 1: MY APPOINTMENTS */}
         {activeTab === 'appointments' && (
           <div className="space-y-4">
             {unifiedAppointments.length === 0 ? (
-              <div className="bg-white border border-slate-200 rounded-xl p-10 text-center space-y-3">
-                <p className="font-display font-semibold text-slate-900">
+              <div className="surface-card rounded-2xl p-10 text-center space-y-3.5">
+                <p className="font-display text-lg font-bold text-slate-900">
                   No Appointments Loaded Yet
                 </p>
-                <p className="text-sm text-slate-600 max-w-md mx-auto">
+                <p className="text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
                   Enter your Booking ID (<span className="font-mono">SXH-...</span>) and mobile
                   number above, sign in with Google, or book a new OPD slot.
                 </p>
                 <button
                   type="button"
                   onClick={onNavigateToBook}
-                  className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg bg-[#0F4C81] text-white text-sm font-medium hover:bg-[#0B3A63] cursor-pointer"
+                  className="inline-flex items-center gap-2 min-h-[44px] px-5 py-2.5 rounded-xl bg-[#0F4C81] text-white text-sm font-semibold hover:bg-[#0A365C] shadow-xs transition-colors cursor-pointer"
                 >
                   <span>Book OPD Appointment</span>
                   <ArrowRight className="w-4 h-4" />
@@ -779,15 +784,15 @@ export function PatientDashboard({
                   return (
                     <div
                       key={appt.key}
-                      className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                      className="surface-card rounded-2xl p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
                     >
                       <div className="space-y-1.5">
-                        <div className="flex flex-wrap items-center gap-2.5">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="font-mono text-xs font-bold text-[#0F4C81]">
                             {appt.bookingId}
                           </span>
                           <span
-                            className={`px-2.5 py-0.5 rounded border text-xs font-medium capitalize ${
+                            className={`px-2.5 py-0.5 rounded-md border text-xs font-semibold capitalize ${
                               APPT_BADGE[appt.status] || APPT_BADGE.pending
                             }`}
                           >
@@ -795,7 +800,7 @@ export function PatientDashboard({
                           </span>
                           {appt.paymentStatus && appt.paymentStatus !== 'unpaid' && (
                             <span
-                              className={`px-2.5 py-0.5 rounded border text-xs font-medium ${
+                              className={`px-2.5 py-0.5 rounded-md border text-xs font-semibold ${
                                 VERIFICATION_BADGE[appt.paymentStatus] || ''
                               }`}
                             >
@@ -803,7 +808,7 @@ export function PatientDashboard({
                             </span>
                           )}
                         </div>
-                        <div className="font-display font-semibold text-slate-950">
+                        <div className="font-display font-bold text-slate-950 text-base">
                           {appt.doctorName}{' '}
                           <span className="font-normal text-sm text-slate-600">
                             · {appt.departmentName}
@@ -815,7 +820,9 @@ export function PatientDashboard({
                           {appt.patientDisplay}
                         </div>
                         {appt.adminNote && (
-                          <p className="text-xs text-[#0F4C81]">Hospital Note: {appt.adminNote}</p>
+                          <p className="text-xs text-[#0F4C81] font-medium pt-0.5">
+                            Hospital Note: {appt.adminNote}
+                          </p>
                         )}
                       </div>
 
@@ -824,7 +831,7 @@ export function PatientDashboard({
                           <button
                             type="button"
                             onClick={() => setSelectedTx(linkedPay)}
-                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-800 hover:bg-slate-50 cursor-pointer"
+                            className="inline-flex items-center gap-1.5 min-h-[38px] px-3.5 py-2 rounded-xl border border-slate-300 bg-white text-xs font-semibold text-slate-800 hover:bg-slate-50 transition-colors cursor-pointer"
                           >
                             <Eye className="w-3.5 h-3.5" />
                             <span>View Payment</span>
@@ -836,7 +843,7 @@ export function PatientDashboard({
                             <button
                               type="button"
                               onClick={() => void openRefundChecker(linkedPay)}
-                              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-sky-300 bg-sky-50 text-xs font-medium text-[#0F4C81] hover:bg-sky-100 cursor-pointer"
+                              className="inline-flex items-center gap-1.5 min-h-[38px] px-3.5 py-2 rounded-xl border border-sky-300 bg-sky-50 text-xs font-semibold text-[#0F4C81] hover:bg-sky-100 transition-colors cursor-pointer"
                             >
                               <RotateCcw className="w-3.5 h-3.5" />
                               <span>Request Refund</span>
@@ -852,9 +859,9 @@ export function PatientDashboard({
                           }}
                           title="Clear from this browser"
                           aria-label={`Remove ${appt.bookingId} from device list`}
-                          className="p-2 rounded-lg border border-slate-200 text-slate-500 hover:text-rose-700 hover:bg-rose-50 cursor-pointer"
+                          className="min-h-[38px] min-w-[38px] flex items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:text-rose-700 hover:bg-rose-50 hover:border-rose-200 transition-colors cursor-pointer"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
@@ -869,18 +876,18 @@ export function PatientDashboard({
         {activeTab === 'payments' && (
           <div className="space-y-4">
             {unifiedPayments.length === 0 ? (
-              <div className="bg-white border border-slate-200 rounded-xl p-10 text-center space-y-3">
-                <p className="font-display font-semibold text-slate-900">
+              <div className="surface-card rounded-2xl p-10 text-center space-y-3.5">
+                <p className="font-display text-lg font-bold text-slate-900">
                   No Payment Records Loaded Yet
                 </p>
-                <p className="text-sm text-slate-600 max-w-md mx-auto">
+                <p className="text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
                   Enter your Payment Ref (<span className="font-mono">PAY-...</span>) and mobile
                   number above, or make a new online Fonepay payment.
                 </p>
                 <button
                   type="button"
                   onClick={onNavigateToPay}
-                  className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg bg-[#0F4C81] text-white text-sm font-medium hover:bg-[#0B3A63] cursor-pointer"
+                  className="inline-flex items-center gap-2 min-h-[44px] px-5 py-2.5 rounded-xl bg-[#0F4C81] text-white text-sm font-semibold hover:bg-[#0A365C] shadow-xs transition-colors cursor-pointer"
                 >
                   <span>Go to Online Payment</span>
                   <ArrowRight className="w-4 h-4" />
@@ -893,18 +900,18 @@ export function PatientDashboard({
                   return (
                     <div
                       key={pay.key}
-                      className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                      className="surface-card rounded-2xl p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
                     >
                       <div className="space-y-1.5">
-                        <div className="flex flex-wrap items-center gap-2.5">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="font-mono text-xs font-bold text-[#0F4C81]">
                             {pay.paymentRef}
                           </span>
-                          <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[11px] font-medium capitalize">
-                            {pay.paymentCategory} Payment
+                          <span className="text-xs font-medium text-slate-500 capitalize">
+                            · {pay.paymentCategory} Payment
                           </span>
                           <span
-                            className={`px-2.5 py-0.5 rounded border text-xs font-medium ${
+                            className={`px-2.5 py-0.5 rounded-md border text-xs font-semibold ${
                               VERIFICATION_BADGE[pay.verificationStatus] || ''
                             }`}
                           >
@@ -913,10 +920,12 @@ export function PatientDashboard({
                         </div>
 
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                          <span className="font-mono text-base font-bold text-slate-950">
+                          <span className="font-mono tabular-nums text-base font-bold text-slate-950">
                             NPR {pay.amount.toLocaleString()}
                           </span>
-                          <span className="text-sm font-medium text-slate-800">{pay.purpose}</span>
+                          <span className="text-sm font-semibold text-slate-800">
+                            {pay.purpose}
+                          </span>
                         </div>
 
                         <div className="text-xs text-slate-600 font-mono">
@@ -925,7 +934,7 @@ export function PatientDashboard({
                         </div>
 
                         {pay.verificationStatus === 'rejected' && pay.rejectionReason && (
-                          <p className="text-xs text-rose-700 font-medium">
+                          <p className="text-xs text-rose-700 font-medium pt-0.5">
                             Rejection Reason: {pay.rejectionReason}
                           </p>
                         )}
@@ -935,7 +944,7 @@ export function PatientDashboard({
                         <button
                           type="button"
                           onClick={() => setSelectedTx(pay)}
-                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-800 hover:bg-slate-50 cursor-pointer"
+                          className="inline-flex items-center gap-1.5 min-h-[38px] px-3.5 py-2 rounded-xl border border-slate-300 bg-white text-xs font-semibold text-slate-800 hover:bg-slate-50 transition-colors cursor-pointer"
                         >
                           <FileText className="w-3.5 h-3.5" />
                           <span>Transaction Details</span>
@@ -945,7 +954,7 @@ export function PatientDashboard({
                           <button
                             type="button"
                             onClick={() => void openRefundChecker(pay)}
-                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#0F4C81] text-white text-xs font-medium hover:bg-[#0B3A63] cursor-pointer"
+                            className="inline-flex items-center gap-1.5 min-h-[38px] px-3.5 py-2 rounded-xl bg-[#0F4C81] text-white text-xs font-semibold hover:bg-[#0A365C] transition-colors cursor-pointer"
                           >
                             <RotateCcw className="w-3.5 h-3.5" />
                             <span>Request Refund</span>
@@ -956,7 +965,7 @@ export function PatientDashboard({
                           <button
                             type="button"
                             onClick={() => setActiveTab('refunds')}
-                            className="px-3 py-2 rounded-lg bg-sky-50 border border-sky-200 text-xs font-medium text-[#0F4C81] cursor-pointer"
+                            className="min-h-[38px] px-3.5 py-2 rounded-xl bg-sky-50 border border-sky-200 text-xs font-semibold text-[#0F4C81] hover:bg-sky-100 transition-colors cursor-pointer"
                           >
                             View Refund Status
                           </button>
@@ -972,7 +981,7 @@ export function PatientDashboard({
                           })}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-800 text-xs font-medium hover:bg-emerald-100"
+                          className="inline-flex items-center gap-1.5 min-h-[38px] px-3.5 py-2 rounded-xl border border-emerald-600/30 bg-emerald-50 text-emerald-800 text-xs font-semibold hover:bg-emerald-100 transition-colors"
                         >
                           <MessageCircle className="w-3.5 h-3.5" />
                           <span>WhatsApp</span>
@@ -990,11 +999,11 @@ export function PatientDashboard({
         {activeTab === 'refunds' && (
           <div className="space-y-6">
             {/* Refund Policy Notice */}
-            <div className="p-4 rounded-xl bg-white border border-sky-200 space-y-1.5 text-xs text-slate-700">
-              <div className="font-semibold text-[#0F4C81]">
+            <div className="surface-card rounded-2xl p-5 border-sky-200/80 bg-sky-50/40 space-y-2 text-xs text-slate-700">
+              <div className="font-display text-sm font-bold text-[#0F4C81]">
                 Spine X Hospital Refund Eligibility Policy
               </div>
-              <ul className="list-disc pl-5 space-y-1">
+              <ul className="list-disc pl-5 space-y-1 leading-relaxed">
                 <li>
                   Normal refund requests are available <strong>at least 24 hours</strong> before the
                   scheduled appointment time, and are unavailable within 24 hours.
@@ -1004,9 +1013,9 @@ export function PatientDashboard({
                   <strong>100% refund regardless of the 24-hour restriction</strong>.
                 </li>
                 <li>
-                  Refund status moves through <span className="font-mono">pending</span> →{' '}
+                  Refund status moves through <span className="font-mono">pending</span> &rarr;{' '}
                   <span className="font-mono">approved</span> (or{' '}
-                  <span className="font-mono">rejected</span>) →{' '}
+                  <span className="font-mono">rejected</span>) &rarr;{' '}
                   <span className="font-mono">refunded</span> once our Accounts Desk records the
                   actual bank/Fonepay transfer reference.
                 </li>
@@ -1014,18 +1023,18 @@ export function PatientDashboard({
             </div>
 
             {unifiedRefunds.length === 0 ? (
-              <div className="bg-white border border-slate-200 rounded-xl p-10 text-center space-y-3">
-                <p className="font-display font-semibold text-slate-900">
+              <div className="surface-card rounded-2xl p-10 text-center space-y-3.5">
+                <p className="font-display text-lg font-bold text-slate-900">
                   No Refund Requests Submitted
                 </p>
-                <p className="text-sm text-slate-600 max-w-md mx-auto">
+                <p className="text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
                   If you have a verified payment that meets hospital refund policy, open your Payment
                   History tab and click <strong>Request Refund</strong>.
                 </p>
                 <button
                   type="button"
                   onClick={() => setActiveTab('payments')}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-slate-300 bg-white text-xs sm:text-sm font-medium text-slate-800 hover:bg-slate-50 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 min-h-[42px] px-4 py-2 rounded-xl border border-slate-300 bg-white text-xs sm:text-sm font-semibold text-slate-800 hover:bg-slate-50 transition-colors cursor-pointer"
                 >
                   <span>Go to Payment History</span>
                 </button>
@@ -1035,28 +1044,29 @@ export function PatientDashboard({
                 {unifiedRefunds.map((ref) => (
                   <div
                     key={ref.key}
-                    className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                    className="surface-card rounded-2xl p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
                   >
                     <div className="space-y-1.5">
-                      <div className="flex flex-wrap items-center gap-2.5">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="font-mono text-xs font-bold text-[#0F4C81]">
                           {ref.refundRef}
                         </span>
                         <span
-                          className={`px-2.5 py-0.5 rounded border text-xs font-medium capitalize ${
+                          className={`px-2.5 py-0.5 rounded-md border text-xs font-semibold capitalize ${
                             REFUND_BADGE[ref.status]
                           }`}
                         >
                           {ref.status}
                         </span>
-                        <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[11px]">
+                        <span className="text-xs font-medium text-slate-500">
+                          ·{' '}
                           {ref.eligibilityType === 'hospital_cancelled'
                             ? '100% Hospital-Cancelled Policy'
                             : 'Standard (>= 24h Policy)'}
                         </span>
                       </div>
 
-                      <div className="font-mono text-sm font-bold text-slate-950">
+                      <div className="font-mono tabular-nums text-sm font-bold text-slate-950">
                         NPR {ref.amount.toLocaleString()}{' '}
                         <span className="font-normal text-xs text-slate-600">
                           · Payment Ref: {ref.paymentRef}
@@ -1067,13 +1077,15 @@ export function PatientDashboard({
                       <p className="text-xs text-slate-700">Reason: {ref.reason}</p>
 
                       {ref.refundTxRef && (
-                        <p className="text-xs font-medium text-emerald-800">
+                        <p className="text-xs font-semibold text-emerald-800">
                           Refund Transfer Reference:{' '}
                           <span className="font-mono font-bold">{ref.refundTxRef}</span>
                         </p>
                       )}
                       {ref.adminNote && (
-                        <p className="text-xs text-[#0F4C81]">Accounts Note: {ref.adminNote}</p>
+                        <p className="text-xs font-medium text-[#0F4C81]">
+                          Accounts Note: {ref.adminNote}
+                        </p>
                       )}
                     </div>
 
@@ -1087,7 +1099,7 @@ export function PatientDashboard({
                         })}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-800 text-xs font-medium hover:bg-emerald-100"
+                        className="inline-flex items-center gap-1.5 min-h-[38px] px-3.5 py-2 rounded-xl border border-emerald-600/30 bg-emerald-50 text-emerald-800 text-xs font-semibold hover:bg-emerald-100 transition-colors"
                       >
                         <MessageCircle className="w-3.5 h-3.5" />
                         <span>Follow Up on WhatsApp</span>
@@ -1102,214 +1114,240 @@ export function PatientDashboard({
       </div>
 
       {/* Transaction Details Modal */}
-      {selectedTx && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 bg-slate-950/60 flex items-center justify-center p-4"
-        >
-          <div className="bg-white rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto border border-slate-200 p-6 space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-              <div>
-                <p className="text-xs text-slate-500">Transaction Receipt Details</p>
-                <h3 className="font-display text-lg font-bold text-slate-950 font-mono">
-                  {selectedTx.paymentRef}
-                </h3>
+      <AnimatePresence>
+        {selectedTx && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.16 }}
+            role="dialog"
+            aria-modal="true"
+            className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.97, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: 8 }}
+              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+              className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto border border-slate-200 shadow-2xl p-6 space-y-5"
+            >
+              <div className="flex items-center justify-between border-b border-slate-200/80 pb-3.5">
+                <div>
+                  <p className="text-xs font-medium text-slate-500">Transaction Receipt Details</p>
+                  <h3 className="font-display text-lg font-bold text-slate-950 font-mono">
+                    {selectedTx.paymentRef}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedTx(null)}
+                  aria-label="Close transaction modal"
+                  className="p-2 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setSelectedTx(null)}
-                aria-label="Close transaction modal"
-                className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
 
-            <dl className="grid grid-cols-2 gap-3 text-xs sm:text-sm">
-              <div>
-                <dt className="text-slate-500 text-xs">Amount</dt>
-                <dd className="font-mono font-bold text-[#0F4C81]">
-                  NPR {selectedTx.amount.toLocaleString()}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-slate-500 text-xs">Verification Status</dt>
-                <dd className="font-semibold text-slate-900">
-                  {VERIFICATION_LABEL[selectedTx.verificationStatus]}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-slate-500 text-xs">Fonepay Tx ID</dt>
-                <dd className="font-mono font-semibold text-slate-900">
-                  {selectedTx.transactionId}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-slate-500 text-xs">Patient</dt>
-                <dd className="font-medium text-slate-900">{selectedTx.patientDisplay}</dd>
-              </div>
-              {selectedTx.bookingId && (
-                <div className="col-span-2">
-                  <dt className="text-slate-500 text-xs">Linked Appointment</dt>
-                  <dd className="font-mono text-slate-900">
-                    {selectedTx.bookingId} · {selectedTx.doctorName} ({selectedTx.appointmentDate}{' '}
-                    {selectedTx.timeSlot})
+              <dl className="grid grid-cols-2 gap-4 text-xs sm:text-sm bg-slate-50/70 p-4 rounded-xl border border-slate-200/80">
+                <div>
+                  <dt className="text-slate-500 text-xs">Amount</dt>
+                  <dd className="font-mono tabular-nums font-bold text-[#0F4C81] mt-0.5">
+                    NPR {selectedTx.amount.toLocaleString()}
                   </dd>
                 </div>
-              )}
-              <div className="col-span-2">
-                <dt className="text-slate-500 text-xs">Purpose</dt>
-                <dd className="text-slate-900">{selectedTx.purpose}</dd>
-              </div>
-            </dl>
-
-            {(selectedTx.screenshotDataUrl || selectedTx.screenshotUrl) && (
-              <div className="space-y-1.5">
-                <p className="text-xs font-medium text-slate-700">Uploaded Payment Screenshot</p>
-                <div className="rounded-lg border border-slate-200 bg-slate-50 p-2 flex justify-center">
-                  <img
-                    src={selectedTx.screenshotUrl || selectedTx.screenshotDataUrl}
-                    alt={`Payment receipt ${selectedTx.paymentRef}`}
-                    className="max-h-72 w-auto rounded object-contain"
-                  />
+                <div>
+                  <dt className="text-slate-500 text-xs">Verification Status</dt>
+                  <dd className="font-semibold text-slate-900 mt-0.5">
+                    {VERIFICATION_LABEL[selectedTx.verificationStatus]}
+                  </dd>
                 </div>
-              </div>
-            )}
-
-            <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
-              <button
-                type="button"
-                onClick={() => setSelectedTx(null)}
-                className="px-4 py-2 rounded-lg border border-slate-300 text-xs font-medium text-slate-800 hover:bg-slate-50 cursor-pointer"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Refund Eligibility & Submission Modal */}
-      {refundTarget && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 bg-slate-950/60 flex items-center justify-center p-4"
-        >
-          <div className="bg-white rounded-xl max-w-md w-full border border-slate-200 p-6 space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-              <div>
-                <p className="text-xs text-slate-500">Refund Policy Verification</p>
-                <h3 className="font-display text-lg font-bold text-slate-950">
-                  Request Refund ({refundTarget.paymentRef})
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setRefundTarget(null)}
-                aria-label="Close refund dialog"
-                className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {checkingEligibility ? (
-              <div className="py-8 flex items-center justify-center gap-2 text-sm text-slate-600">
-                <Loader2 className="w-4 h-4 animate-spin text-[#0F4C81]" />
-                <span>Checking hospital refund policy &amp; appointment window...</span>
-              </div>
-            ) : eligibilityResult ? (
-              eligibilityResult.eligible ? (
-                <form onSubmit={handleSubmitRefund} className="space-y-4">
-                  <div className="p-3.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs text-emerald-950 flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-700" />
-                    <div>
-                      <div className="font-semibold">
-                        Eligible for {eligibilityResult.refundPercentage}% Refund (NPR{' '}
-                        {refundTarget.amount.toLocaleString()})
-                      </div>
-                      <p className="mt-0.5">{eligibilityResult.reason}</p>
-                    </div>
+                <div>
+                  <dt className="text-slate-500 text-xs">Fonepay Tx ID</dt>
+                  <dd className="font-mono font-semibold text-slate-900 mt-0.5 break-all">
+                    {selectedTx.transactionId}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500 text-xs">Patient</dt>
+                  <dd className="font-medium text-slate-900 mt-0.5">{selectedTx.patientDisplay}</dd>
+                </div>
+                {selectedTx.bookingId && (
+                  <div className="col-span-2">
+                    <dt className="text-slate-500 text-xs">Linked Appointment</dt>
+                    <dd className="font-mono text-slate-900 mt-0.5">
+                      {selectedTx.bookingId} · {selectedTx.doctorName} ({selectedTx.appointmentDate}{' '}
+                      {selectedTx.timeSlot})
+                    </dd>
                   </div>
+                )}
+                <div className="col-span-2">
+                  <dt className="text-slate-500 text-xs">Purpose</dt>
+                  <dd className="text-slate-900 mt-0.5">{selectedTx.purpose}</dd>
+                </div>
+              </dl>
 
-                  <div>
-                    <label
-                      htmlFor="refund-reason-input"
-                      className="block text-xs font-semibold text-slate-800 mb-1.5"
-                    >
-                      Reason for Refund Request <span className="text-rose-600">*</span>
-                    </label>
-                    <textarea
-                      id="refund-reason-input"
-                      required
-                      minLength={5}
-                      maxLength={500}
-                      rows={3}
-                      value={refundReason}
-                      onChange={(e) => setRefundReason(e.target.value)}
-                      placeholder="Please briefly explain why you are requesting this refund..."
-                      className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:border-[#0F4C81]"
+              {(selectedTx.screenshotDataUrl || selectedTx.screenshotUrl) && (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-slate-700">
+                    Uploaded Payment Screenshot
+                  </p>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-2.5 flex justify-center">
+                    <img
+                      src={selectedTx.screenshotUrl || selectedTx.screenshotDataUrl}
+                      alt={`Payment receipt ${selectedTx.paymentRef}`}
+                      className="max-h-72 w-auto rounded-lg object-contain"
                     />
                   </div>
+                </div>
+              )}
 
-                  <div className="flex justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setRefundTarget(null)}
-                      className="px-4 py-2 rounded-lg border border-slate-300 text-xs font-medium text-slate-700 cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={submittingRefund}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#0F4C81] text-white text-xs font-medium hover:bg-[#0B3A63] disabled:opacity-50 cursor-pointer"
-                    >
-                      {submittingRefund && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                      <span>Submit Refund Request</span>
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <div className="space-y-4">
-                  <div className="p-4 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-900 flex items-start gap-2.5">
-                    <XCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-700" />
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-200/80">
+                <button
+                  type="button"
+                  onClick={() => setSelectedTx(null)}
+                  className="min-h-[38px] px-4 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 hover:bg-slate-50 transition-colors cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Refund Eligibility & Submission Modal */}
+      <AnimatePresence>
+        {refundTarget && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.16 }}
+            role="dialog"
+            aria-modal="true"
+            className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.97, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: 8 }}
+              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+              className="bg-white rounded-2xl max-w-md w-full border border-slate-200 shadow-2xl p-6 space-y-5"
+            >
+              <div className="flex items-center justify-between border-b border-slate-200/80 pb-3.5">
+                <div>
+                  <p className="text-xs font-medium text-slate-500">Refund Policy Verification</p>
+                  <h3 className="font-display text-lg font-bold text-slate-950">
+                    Request Refund ({refundTarget.paymentRef})
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setRefundTarget(null)}
+                  aria-label="Close refund dialog"
+                  className="p-2 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {checkingEligibility ? (
+                <div className="py-8 flex items-center justify-center gap-2.5 text-sm text-slate-600">
+                  <Loader2 className="w-4 h-4 animate-spin text-[#0F4C81]" />
+                  <span>Checking hospital refund policy &amp; appointment window...</span>
+                </div>
+              ) : eligibilityResult ? (
+                eligibilityResult.eligible ? (
+                  <form onSubmit={handleSubmitRefund} className="space-y-4">
+                    <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-950 flex items-start gap-2.5">
+                      <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-700" />
+                      <div>
+                        <div className="font-semibold">
+                          Eligible for {eligibilityResult.refundPercentage}% Refund (NPR{' '}
+                          {refundTarget.amount.toLocaleString()})
+                        </div>
+                        <p className="mt-1 leading-relaxed">{eligibilityResult.reason}</p>
+                      </div>
+                    </div>
+
                     <div>
-                      <div className="font-semibold">Not Eligible for Automated Online Refund</div>
-                      <p className="mt-1 leading-relaxed">{eligibilityResult.reason}</p>
+                      <label
+                        htmlFor="refund-reason-input"
+                        className="block text-xs font-semibold text-slate-800 mb-1.5"
+                      >
+                        Reason for Refund Request <span className="text-rose-600">*</span>
+                      </label>
+                      <textarea
+                        id="refund-reason-input"
+                        required
+                        minLength={5}
+                        maxLength={500}
+                        rows={3}
+                        value={refundReason}
+                        onChange={(e) => setRefundReason(e.target.value)}
+                        placeholder="Please briefly explain why you are requesting this refund..."
+                        className="clinical-input px-3.5 py-2.5 text-sm"
+                      />
+                    </div>
+
+                    <div className="flex justify-end gap-2.5 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setRefundTarget(null)}
+                        className="min-h-[40px] px-4 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={submittingRefund}
+                        className="inline-flex items-center gap-1.5 min-h-[40px] px-4 py-2 rounded-xl bg-[#0F4C81] text-white text-xs font-semibold hover:bg-[#0A365C] disabled:opacity-50 transition-colors cursor-pointer"
+                      >
+                        {submittingRefund && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                        <span>Submit Refund Request</span>
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-900 flex items-start gap-2.5">
+                      <XCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-700" />
+                      <div>
+                        <div className="font-semibold">Not Eligible for Automated Online Refund</div>
+                        <p className="mt-1 leading-relaxed">{eligibilityResult.reason}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between gap-2.5">
+                      <a
+                        href={HOSPITAL_INFO.whatsappHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 min-h-[40px] px-4 py-2 rounded-xl bg-emerald-700 text-white text-xs font-semibold hover:bg-emerald-800 transition-colors"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5" />
+                        <span>Contact Accounts Desk</span>
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => setRefundTarget(null)}
+                        className="min-h-[40px] px-4 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 hover:bg-slate-50 transition-colors cursor-pointer"
+                      >
+                        Close
+                      </button>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <a
-                      href={HOSPITAL_INFO.whatsappHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-700 text-white text-xs font-medium hover:bg-emerald-800"
-                    >
-                      <MessageCircle className="w-3.5 h-3.5" />
-                      <span>Contact Accounts Desk</span>
-                    </a>
-                    <button
-                      type="button"
-                      onClick={() => setRefundTarget(null)}
-                      className="px-4 py-2 rounded-lg border border-slate-300 text-xs font-medium text-slate-800 cursor-pointer"
-                    >
-                      Close
-                    </button>
-                  </div>
+                )
+              ) : (
+                <div className="text-xs text-slate-600 flex items-center gap-2">
+                  <Clock3 className="w-4 h-4" />
+                  <span>Waiting for eligibility check...</span>
                 </div>
-              )
-            ) : (
-              <div className="text-xs text-slate-600 flex items-center gap-2">
-                <Clock3 className="w-4 h-4" />
-                <span>Waiting for eligibility check...</span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }

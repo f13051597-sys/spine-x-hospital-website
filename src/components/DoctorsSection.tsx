@@ -8,6 +8,7 @@ import {
   Stethoscope,
   X,
 } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useMemo, useState } from 'react';
 import type { Department, Doctor } from '../types/hospital';
 
@@ -62,18 +63,18 @@ export function DoctorsSection({
   };
 
   return (
-    <section className="py-14 lg:py-20 bg-slate-50 border-b border-slate-200">
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 space-y-8">
+    <section className="py-16 lg:py-22 bg-slate-50 border-b border-slate-200/80">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 space-y-10">
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
           <div className="space-y-2 max-w-2xl">
-            <p className="text-xs font-medium text-emerald-800">Medical Consultants</p>
+            <p className="text-xs font-semibold text-emerald-800">Medical Consultants</p>
             <h2
-              className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-slate-950"
+              className="font-display text-2xl sm:text-3xl lg:text-[34px] font-bold tracking-tight text-slate-950"
               style={{ textWrap: 'balance' }}
             >
               Our Doctors &amp; OPD Consultation Fees
             </h2>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-slate-600 leading-relaxed">
               Review verified specialist profiles, qualifications, and OPD consultation fees before
               reserving an appointment slot.
             </p>
@@ -81,9 +82,9 @@ export function DoctorsSection({
 
           {/* Search & Department Filter */}
           <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-            <div className="relative flex-1 sm:w-64">
+            <div className="relative flex-1 sm:w-68">
               <Search
-                className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
                 aria-hidden="true"
               />
               <input
@@ -92,7 +93,7 @@ export function DoctorsSection({
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search doctor, specialty, qualification..."
                 aria-label="Search doctor or specialty"
-                className="w-full pl-9 pr-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#0F4C81]"
+                className="clinical-input pl-10 pr-3.5 py-2.5 text-sm"
               />
             </div>
 
@@ -100,7 +101,7 @@ export function DoctorsSection({
               value={departmentFilter}
               onChange={(e) => setDepartmentFilter(e.target.value)}
               aria-label="Filter doctors by department"
-              className="px-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-800 focus:outline-none focus:border-[#0F4C81]"
+              className="clinical-input sm:w-auto px-3.5 py-2.5 text-sm"
             >
               <option value="all">All Departments</option>
               {departments.map((dept) => (
@@ -113,8 +114,8 @@ export function DoctorsSection({
         </div>
 
         {filteredDoctors.length === 0 ? (
-          <div className="bg-white border border-slate-200 rounded-xl p-10 text-center space-y-3">
-            <p className="text-base font-medium text-slate-900">
+          <div className="surface-card rounded-2xl p-10 text-center space-y-3">
+            <p className="text-base font-semibold text-slate-900">
               No consultants match your current filter.
             </p>
             <button
@@ -123,7 +124,7 @@ export function DoctorsSection({
                 setSearchTerm('');
                 setDepartmentFilter('all');
               }}
-              className="px-4 py-2 text-sm font-medium text-[#0F4C81] border border-slate-300 rounded-lg hover:bg-slate-50 cursor-pointer"
+              className="px-4 py-2 text-sm font-semibold text-[#0F4C81] border border-slate-300 rounded-xl hover:bg-slate-50 cursor-pointer"
             >
               Reset Filters
             </button>
@@ -138,21 +139,21 @@ export function DoctorsSection({
               return (
                 <article
                   key={doctor.id}
-                  className="bg-white border border-slate-200 rounded-xl overflow-hidden flex flex-col justify-between hover:border-sky-300 transition-colors"
+                  className="surface-card surface-card-hover rounded-2xl overflow-hidden flex flex-col justify-between group"
                 >
                   <div>
                     {/* Consistent Real Doctor Portrait Frame */}
-                    <div className="aspect-[5/4] w-full bg-slate-100 border-b border-slate-200 overflow-hidden relative">
+                    <div className="aspect-[5/4] w-full bg-slate-100 border-b border-slate-200/80 overflow-hidden relative">
                       {hasPhoto ? (
                         <img
                           src={doctor.photoUrl}
                           alt={`${doctor.name} — ${doctor.specialty || 'Consultant Doctor'}`}
                           onError={() => markPhotoFailed(doctor.id)}
-                          className="w-full h-full object-cover object-top"
+                          className="w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02]"
                         />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-sky-50 to-slate-100 flex flex-col items-center justify-center gap-2 text-[#0F4C81]">
-                          <div className="w-16 h-16 rounded-full bg-white border border-sky-200 flex items-center justify-center font-display text-xl font-bold">
+                        <div className="w-full h-full bg-gradient-to-br from-sky-50 via-white to-slate-100 flex flex-col items-center justify-center gap-2 text-[#0F4C81]">
+                          <div className="w-16 h-16 rounded-2xl bg-white border border-sky-200 flex items-center justify-center font-display text-xl font-bold shadow-xs">
                             {monogram}
                           </div>
                           <span className="text-xs text-slate-500">Photo Unavailable</span>
@@ -164,7 +165,7 @@ export function DoctorsSection({
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between gap-2">
                           <span
-                            className={`text-xs font-medium ${
+                            className={`text-xs font-semibold ${
                               doctor.isAvailable ? 'text-emerald-800' : 'text-slate-500'
                             }`}
                           >
@@ -192,7 +193,7 @@ export function DoctorsSection({
                         </p>
 
                         {dept && (
-                          <p className="text-xs text-slate-500 flex items-center gap-1.5">
+                          <p className="text-xs text-slate-500 flex items-center gap-1.5 pt-0.5">
                             <Building2 className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                             <span>{dept.name}</span>
                           </p>
@@ -202,7 +203,7 @@ export function DoctorsSection({
                       <dl className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100 text-sm">
                         <div>
                           <dt className="text-xs text-slate-500">OPD Fee</dt>
-                          <dd className="font-mono tabular-nums font-semibold text-slate-950 mt-0.5">
+                          <dd className="font-mono tabular-nums font-bold text-slate-950 mt-0.5">
                             {doctor.opdFee > 0 ? `NPR ${doctor.opdFee}` : 'Confirm at Desk'}
                           </dd>
                         </div>
@@ -210,7 +211,7 @@ export function DoctorsSection({
                         {doctor.opdSchedule ? (
                           <div>
                             <dt className="text-xs text-slate-500">OPD Schedule</dt>
-                            <dd className="text-xs font-medium text-emerald-800 mt-1 flex items-center gap-1">
+                            <dd className="text-xs font-semibold text-emerald-800 mt-1 flex items-center gap-1">
                               <Clock className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                               <span>{doctor.opdSchedule}</span>
                             </dd>
@@ -218,7 +219,7 @@ export function DoctorsSection({
                         ) : (
                           <div>
                             <dt className="text-xs text-slate-500">Online Slots</dt>
-                            <dd className="text-xs font-mono text-slate-700 mt-1">
+                            <dd className="text-xs font-mono tabular-nums text-slate-700 mt-1">
                               {doctor.availableSlots.length} configurable slots
                             </dd>
                           </div>
@@ -232,7 +233,7 @@ export function DoctorsSection({
                       type="button"
                       disabled={!doctor.isAvailable}
                       onClick={() => onSelectDoctor(doctor)}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-[#0F4C81] text-white text-sm font-medium hover:bg-[#0B3A63] disabled:bg-slate-200 disabled:text-slate-500 transition-colors cursor-pointer disabled:cursor-not-allowed"
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 min-h-[42px] rounded-xl bg-[#0F4C81] text-white text-sm font-semibold hover:bg-[#0A365C] disabled:bg-slate-200 disabled:text-slate-500 transition-colors cursor-pointer disabled:cursor-not-allowed whitespace-nowrap shrink-0"
                     >
                       <CalendarCheck className="w-4 h-4" aria-hidden="true" />
                       <span>{doctor.isAvailable ? 'Book OPD' : 'Unavailable'}</span>
@@ -241,7 +242,7 @@ export function DoctorsSection({
                     <button
                       type="button"
                       onClick={() => setProfileDoctor(doctor)}
-                      className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-800 text-sm font-medium hover:bg-slate-50 transition-colors cursor-pointer"
+                      className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 min-h-[42px] rounded-xl border border-slate-300 bg-white text-slate-800 text-sm font-semibold hover:bg-slate-50 transition-colors cursor-pointer whitespace-nowrap shrink-0"
                     >
                       <Eye className="w-4 h-4" aria-hidden="true" />
                       <span>Profile</span>
@@ -255,138 +256,148 @@ export function DoctorsSection({
       </div>
 
       {/* Verified Doctor Profile Modal */}
-      {profileDoctor && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="doctor-profile-modal-title"
-          className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4"
-          onClick={() => setProfileDoctor(null)}
-        >
-          <div
-            className="bg-white border border-slate-200 rounded-xl max-w-lg w-full overflow-hidden shadow-xl max-h-[90vh] flex flex-col"
-            onClick={(e) => e.stopPropagation()}
+      <AnimatePresence>
+        {profileDoctor && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.16 }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="doctor-profile-modal-title"
+            className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4"
+            onClick={() => setProfileDoctor(null)}
           >
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-              <h3
-                id="doctor-profile-modal-title"
-                className="font-display font-bold text-lg text-slate-950"
-              >
-                Consultant Profile
-              </h3>
-              <button
-                type="button"
-                onClick={() => setProfileDoctor(null)}
-                aria-label="Close doctor profile"
-                className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-6 overflow-y-auto space-y-5">
-              <div className="flex flex-col sm:flex-row items-start gap-5">
-                <div className="w-28 h-28 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 shrink-0">
-                  {profileDoctor.photoUrl && !failedPhotoIds[profileDoctor.id] ? (
-                    <img
-                      src={profileDoctor.photoUrl}
-                      alt={profileDoctor.name}
-                      className="w-full h-full object-cover object-top"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-sky-50 text-[#0F4C81] font-display font-bold text-xl flex items-center justify-center">
-                      {getDoctorMonogram(profileDoctor.name)}
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-1.5">
-                  <h4 className="font-display text-xl font-bold text-slate-950">
-                    {profileDoctor.name}
-                  </h4>
-                  <p className="text-sm text-slate-700">
-                    {profileDoctor.specialty || 'OPD Consultant'}
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    Department:{' '}
-                    {departmentMap.get(profileDoctor.departmentId)?.name || 'General OPD'}
-                  </p>
-                  {profileDoctor.nmcNo && (
-                    <p className="text-xs font-mono text-slate-600">
-                      NMC Registration No.: {profileDoctor.nmcNo}
-                    </p>
-                  )}
-                </div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.97, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: 8 }}
+              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+              className="bg-white border border-slate-200 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl max-h-[90vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+                <h3
+                  id="doctor-profile-modal-title"
+                  className="font-display font-bold text-lg text-slate-950"
+                >
+                  Consultant Profile
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setProfileDoctor(null)}
+                  aria-label="Close doctor profile"
+                  className="p-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
 
-              {profileDoctor.qualification && (
-                <div className="p-4 rounded-lg bg-sky-50/70 border border-sky-200 space-y-1">
-                  <div className="text-xs font-semibold text-[#0F4C81] flex items-center gap-1.5">
-                    <Award className="w-4 h-4" aria-hidden="true" />
-                    <span>Qualifications &amp; Training</span>
+              <div className="p-6 overflow-y-auto space-y-5">
+                <div className="flex flex-col sm:flex-row items-start gap-5">
+                  <div className="w-28 h-28 rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 shrink-0">
+                    {profileDoctor.photoUrl && !failedPhotoIds[profileDoctor.id] ? (
+                      <img
+                        src={profileDoctor.photoUrl}
+                        alt={profileDoctor.name}
+                        className="w-full h-full object-cover object-top"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-sky-50 text-[#0F4C81] font-display font-bold text-xl flex items-center justify-center">
+                        {getDoctorMonogram(profileDoctor.name)}
+                      </div>
+                    )}
                   </div>
-                  <p className="text-xs sm:text-sm text-slate-800 leading-relaxed">
-                    {profileDoctor.qualification}
-                  </p>
-                </div>
-              )}
 
-              {profileDoctor.clinicalFocus && (
-                <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 space-y-1">
-                  <div className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
-                    <Stethoscope className="w-4 h-4 text-[#0F4C81]" aria-hidden="true" />
-                    <span>Clinical Areas</span>
+                  <div className="space-y-1.5">
+                    <h4 className="font-display text-xl font-bold text-slate-950">
+                      {profileDoctor.name}
+                    </h4>
+                    <p className="text-sm text-slate-700">
+                      {profileDoctor.specialty || 'OPD Consultant'}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      Department:{' '}
+                      {departmentMap.get(profileDoctor.departmentId)?.name || 'General OPD'}
+                    </p>
+                    {profileDoctor.nmcNo && (
+                      <p className="text-xs font-mono text-slate-600">
+                        NMC Registration No.: {profileDoctor.nmcNo}
+                      </p>
+                    )}
                   </div>
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                    {profileDoctor.clinicalFocus}
-                  </p>
                 </div>
-              )}
 
-              <dl className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-200 text-sm">
-                <div>
-                  <dt className="text-xs text-slate-500">OPD Consultation Fee</dt>
-                  <dd className="font-mono tabular-nums font-bold text-[#0F4C81] mt-0.5">
-                    {profileDoctor.opdFee > 0
-                      ? `NPR ${profileDoctor.opdFee}`
-                      : 'Confirm at OPD Desk'}
-                  </dd>
-                </div>
-                {profileDoctor.opdSchedule && (
-                  <div>
-                    <dt className="text-xs text-slate-500">OPD Schedule</dt>
-                    <dd className="font-medium text-emerald-800 mt-0.5">
-                      {profileDoctor.opdSchedule}
-                    </dd>
+                {profileDoctor.qualification && (
+                  <div className="p-4 rounded-xl bg-sky-50/70 border border-sky-200 space-y-1">
+                    <div className="text-xs font-semibold text-[#0F4C81] flex items-center gap-1.5">
+                      <Award className="w-4 h-4" aria-hidden="true" />
+                      <span>Qualifications &amp; Training</span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-slate-800 leading-relaxed">
+                      {profileDoctor.qualification}
+                    </p>
                   </div>
                 )}
-              </dl>
-            </div>
 
-            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setProfileDoctor(null)}
-                className="px-4 py-2 rounded-lg border border-slate-300 bg-white text-sm font-medium text-slate-700 hover:bg-slate-100 cursor-pointer"
-              >
-                Close
-              </button>
-              <button
-                type="button"
-                disabled={!profileDoctor.isAvailable}
-                onClick={() => {
-                  const chosen = profileDoctor;
-                  setProfileDoctor(null);
-                  onSelectDoctor(chosen);
-                }}
-                className="px-5 py-2 rounded-lg bg-[#0F4C81] text-white text-sm font-medium hover:bg-[#0B3A63] disabled:bg-slate-300 cursor-pointer"
-              >
-                Book Appointment
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+                {profileDoctor.clinicalFocus && (
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                    <div className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                      <Stethoscope className="w-4 h-4 text-[#0F4C81]" aria-hidden="true" />
+                      <span>Clinical Areas</span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                      {profileDoctor.clinicalFocus}
+                    </p>
+                  </div>
+                )}
+
+                <dl className="grid grid-cols-2 gap-4 pt-3 border-t border-slate-200 text-sm">
+                  <div>
+                    <dt className="text-xs text-slate-500">OPD Consultation Fee</dt>
+                    <dd className="font-mono tabular-nums font-bold text-[#0F4C81] mt-0.5">
+                      {profileDoctor.opdFee > 0
+                        ? `NPR ${profileDoctor.opdFee}`
+                        : 'Confirm at OPD Desk'}
+                    </dd>
+                  </div>
+                  {profileDoctor.opdSchedule && (
+                    <div>
+                      <dt className="text-xs text-slate-500">OPD Schedule</dt>
+                      <dd className="font-semibold text-emerald-800 mt-0.5">
+                        {profileDoctor.opdSchedule}
+                      </dd>
+                    </div>
+                  )}
+                </dl>
+              </div>
+
+              <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setProfileDoctor(null)}
+                  className="px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-100 cursor-pointer"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  disabled={!profileDoctor.isAvailable}
+                  onClick={() => {
+                    const chosen = profileDoctor;
+                    setProfileDoctor(null);
+                    onSelectDoctor(chosen);
+                  }}
+                  className="px-5 py-2.5 rounded-xl bg-[#0F4C81] text-white text-sm font-semibold hover:bg-[#0A365C] disabled:bg-slate-300 cursor-pointer"
+                >
+                  Book Appointment
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }

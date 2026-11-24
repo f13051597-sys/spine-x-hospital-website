@@ -36,21 +36,26 @@ export class ErrorBoundary extends React.Component<
     if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-          <div className="max-w-lg w-full bg-white border border-slate-200 rounded-xl p-8 space-y-5">
-            <div className="flex items-center gap-3 text-rose-700">
-              <AlertTriangle className="w-6 h-6 shrink-0" aria-hidden="true" />
-              <h1 className="font-display text-xl font-semibold text-slate-900">
-                Unable to Complete Request
-              </h1>
+          <div className="max-w-lg w-full surface-card rounded-2xl p-8 space-y-5">
+            <div className="flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-700 shrink-0">
+                <AlertTriangle className="w-5 h-5" aria-hidden="true" />
+              </div>
+              <div>
+                <p className="text-xs font-medium text-rose-700">Application Recovery</p>
+                <h1 className="font-display text-xl font-bold text-slate-950">
+                  Unable to Complete Request
+                </h1>
+              </div>
             </div>
             <p className="text-sm text-slate-600 leading-relaxed">{this.state.message}</p>
             <button
               type="button"
               onClick={() => window.location.reload()}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#0F4C81] text-white text-sm font-medium hover:bg-[#0B3A63] transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0F4C81] text-white text-sm font-semibold hover:bg-[#0A365C] transition-colors cursor-pointer"
             >
               <RotateCcw className="w-4 h-4" aria-hidden="true" />
-              Reload Page
+              <span>Reload Page</span>
             </button>
           </div>
         </div>

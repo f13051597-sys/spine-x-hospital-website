@@ -176,15 +176,15 @@ export function OnlinePaymentSection({
   };
 
   return (
-    <section className="py-14 lg:py-20 bg-white border-b border-slate-200">
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 space-y-8">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-200 pb-6">
+    <section className="py-16 lg:py-22 bg-slate-50 min-h-[82vh] border-b border-slate-200/80">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 space-y-10">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-5 border-b border-slate-200 pb-6">
           <div className="space-y-2 max-w-2xl">
-            <p className="text-xs font-medium text-emerald-800">
+            <p className="text-xs font-semibold text-emerald-800">
               Official Hospital Digital Payment Desk
             </p>
             <h1
-              className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-slate-950"
+              className="font-display text-2xl sm:text-3xl lg:text-[36px] font-bold tracking-tight text-slate-950"
               style={{ textWrap: 'balance' }}
             >
               Online Hospital Payment (Fonepay QR)
@@ -199,14 +199,14 @@ export function OnlinePaymentSection({
             <button
               type="button"
               onClick={onGoToBooking}
-              className="px-4 py-2 rounded-lg border border-slate-300 bg-white text-xs sm:text-sm font-medium text-slate-800 hover:bg-slate-50 cursor-pointer"
+              className="px-4 py-2.5 min-h-[42px] rounded-xl border border-slate-300 bg-white text-xs sm:text-sm font-semibold text-slate-800 hover:bg-slate-50 transition-colors cursor-pointer whitespace-nowrap shrink-0"
             >
               Book OPD With Payment
             </button>
             <button
               type="button"
               onClick={onOpenDashboard}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#0F4C81] text-white text-xs sm:text-sm font-medium hover:bg-[#0B3A63] cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 min-h-[42px] rounded-xl bg-[#0F4C81] text-white text-xs sm:text-sm font-semibold hover:bg-[#0A365C] transition-colors cursor-pointer whitespace-nowrap shrink-0"
             >
               <LayoutDashboard className="w-4 h-4" aria-hidden="true" />
               <span>Patient Dashboard</span>
@@ -217,26 +217,24 @@ export function OnlinePaymentSection({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
           {/* Left Column: Official Hospital Fonepay QR & Merchant Verification Info */}
           <div className="lg:col-span-5 space-y-5">
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 sm:p-6 space-y-4">
+            <div className="surface-card rounded-2xl p-5 sm:p-6 space-y-4">
               <div className="flex items-center justify-between gap-2">
-                <div className="inline-flex items-center gap-2 text-sm font-semibold text-[#0F4C81]">
+                <div className="inline-flex items-center gap-2 text-sm font-bold text-[#0F4C81]">
                   <QrCode className="w-4 h-4" aria-hidden="true" />
                   <span>Official Fonepay Merchant QR</span>
                 </div>
-                <span className="text-xs font-medium text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded">
-                  Verified Terminal
-                </span>
+                <span className="text-xs font-semibold text-emerald-800">Verified Terminal</span>
               </div>
 
-              <div className="bg-white rounded-xl border border-slate-200 p-3 flex justify-center">
+              <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 flex justify-center">
                 <img
                   src={FONEPAY_MERCHANT_INFO.qrImageUrl}
                   alt="Official Fonepay QR for Spine X Superspeciality Hospital and Trauma Center Pvt. Ltd."
-                  className="w-full max-w-[300px] h-auto rounded-lg object-contain"
+                  className="w-full max-w-[290px] h-auto rounded-lg object-contain"
                 />
               </div>
 
-              <dl className="space-y-2 text-xs text-slate-700 pt-1">
+              <dl className="space-y-2.5 text-xs text-slate-700 pt-1">
                 <div className="flex justify-between gap-3">
                   <dt className="text-slate-500">Merchant</dt>
                   <dd className="font-semibold text-slate-900 text-right">
@@ -245,7 +243,7 @@ export function OnlinePaymentSection({
                 </div>
                 <div className="flex justify-between gap-3">
                   <dt className="text-slate-500">Terminal ID</dt>
-                  <dd className="font-mono font-semibold text-slate-900">
+                  <dd className="font-mono font-bold text-slate-900">
                     {FONEPAY_MERCHANT_INFO.terminalId}
                   </dd>
                 </div>
@@ -258,8 +256,8 @@ export function OnlinePaymentSection({
               </dl>
             </div>
 
-            <div className="p-4 rounded-xl border border-sky-200 bg-sky-50/70 space-y-2 text-xs text-slate-700">
-              <div className="flex items-center gap-2 font-semibold text-[#0F4C81]">
+            <div className="p-4 sm:p-5 rounded-2xl border border-sky-200 bg-sky-50/70 space-y-2 text-xs text-slate-700">
+              <div className="flex items-center gap-2 font-bold text-[#0F4C81]">
                 <ShieldCheck className="w-4 h-4 shrink-0" aria-hidden="true" />
                 <span>
                   {fonepayApiReady
@@ -274,16 +272,16 @@ export function OnlinePaymentSection({
               </p>
             </div>
 
-            <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/60 flex items-center justify-between gap-3">
+            <div className="p-4 sm:p-5 rounded-2xl border border-emerald-200 bg-emerald-50/70 flex items-center justify-between gap-3">
               <div className="text-xs text-emerald-950">
-                <div className="font-semibold">Billing Assistance Desk</div>
+                <div className="font-bold">Billing Assistance Desk</div>
                 <div className="font-mono mt-0.5">{HOSPITAL_INFO.phone}</div>
               </div>
               <a
                 href={HOSPITAL_INFO.whatsappHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-700 text-white text-xs font-medium hover:bg-emerald-800 shrink-0"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-700 text-white text-xs font-semibold hover:bg-emerald-800 shrink-0"
               >
                 <MessageCircle className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>WhatsApp Desk</span>
@@ -294,14 +292,13 @@ export function OnlinePaymentSection({
           {/* Right Column: Payment Submission Form or Receipt */}
           <div className="lg:col-span-7">
             {confirmation ? (
-              <div className="bg-white border border-emerald-300 rounded-xl p-6 sm:p-8 space-y-6">
-                <div className="flex items-start gap-3">
-                  <CheckCircle2
-                    className="w-7 h-7 text-emerald-700 shrink-0 mt-0.5"
-                    aria-hidden="true"
-                  />
+              <div className="surface-card rounded-2xl border-emerald-200 p-6 sm:p-8 space-y-6">
+                <div className="flex items-start gap-3.5">
+                  <div className="w-11 h-11 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center shrink-0">
+                    <CheckCircle2 className="w-6 h-6 text-emerald-700" aria-hidden="true" />
+                  </div>
                   <div>
-                    <p className="text-xs font-medium text-amber-800">
+                    <p className="text-xs font-semibold text-amber-800">
                       Status: Pending Verification
                     </p>
                     <h2 className="font-display text-2xl font-bold text-slate-950 mt-0.5">
@@ -310,10 +307,10 @@ export function OnlinePaymentSection({
                   </div>
                 </div>
 
-                <div className="p-5 rounded-lg bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <div className="text-xs text-slate-500">Payment Reference ID</div>
-                    <div className="font-mono tabular-nums text-xl font-bold text-[#0F4C81] mt-0.5">
+                    <div className="text-xs font-medium text-slate-500">Payment Reference ID</div>
+                    <div className="font-mono tabular-nums text-xl sm:text-2xl font-bold text-[#0F4C81] mt-0.5">
                       {confirmation.paymentRef}
                     </div>
                   </div>
@@ -321,7 +318,7 @@ export function OnlinePaymentSection({
                     <button
                       type="button"
                       onClick={handleCopyRef}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-800 hover:bg-slate-50 cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-300 bg-white text-xs font-semibold text-slate-800 hover:bg-slate-50 cursor-pointer"
                     >
                       <Copy className="w-3.5 h-3.5" aria-hidden="true" />
                       <span>{copiedRef ? 'Copied' : 'Copy Ref'}</span>
@@ -329,7 +326,7 @@ export function OnlinePaymentSection({
                     <button
                       type="button"
                       onClick={() => window.print()}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-800 hover:bg-slate-50 cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-300 bg-white text-xs font-semibold text-slate-800 hover:bg-slate-50 cursor-pointer"
                     >
                       <Printer className="w-3.5 h-3.5" aria-hidden="true" />
                       <span>Print</span>
@@ -340,11 +337,13 @@ export function OnlinePaymentSection({
                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                   <div>
                     <dt className="text-xs text-slate-500">Patient Name</dt>
-                    <dd className="font-medium text-slate-900 mt-0.5">{confirmation.patientName}</dd>
+                    <dd className="font-semibold text-slate-900 mt-0.5">
+                      {confirmation.patientName}
+                    </dd>
                   </div>
                   <div>
                     <dt className="text-xs text-slate-500">Mobile Number</dt>
-                    <dd className="font-mono tabular-nums font-medium text-slate-900 mt-0.5">
+                    <dd className="font-mono tabular-nums font-semibold text-slate-900 mt-0.5">
                       {confirmation.mobileNumber}
                     </dd>
                   </div>
@@ -371,7 +370,10 @@ export function OnlinePaymentSection({
 
                 <div className="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <p className="text-xs text-emerald-950 leading-relaxed">
-                    Save your Payment Reference ID (<span className="font-mono font-semibold">{confirmation.paymentRef}</span>) and mobile number to track verification or request an eligible refund in the Patient Dashboard.
+                    Save your Payment Reference ID (
+                    <span className="font-mono font-semibold">{confirmation.paymentRef}</span>) and
+                    mobile number to track verification or request an eligible refund in the Patient
+                    Dashboard.
                   </p>
                   <a
                     href={buildPaymentWhatsAppHref({
@@ -383,7 +385,7 @@ export function OnlinePaymentSection({
                     })}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-700 text-white text-xs font-medium hover:bg-emerald-800 shrink-0"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-700 text-white text-xs font-semibold hover:bg-emerald-800 shrink-0"
                   >
                     <MessageCircle className="w-3.5 h-3.5" aria-hidden="true" />
                     <span>Send on WhatsApp</span>
@@ -394,14 +396,14 @@ export function OnlinePaymentSection({
                   <button
                     type="button"
                     onClick={onOpenDashboard}
-                    className="px-5 py-2.5 rounded-lg bg-[#0F4C81] text-white text-sm font-medium hover:bg-[#0B3A63] cursor-pointer"
+                    className="px-5 py-2.5 rounded-xl bg-[#0F4C81] text-white text-sm font-semibold hover:bg-[#0A365C] cursor-pointer"
                   >
                     Track in Patient Dashboard
                   </button>
                   <button
                     type="button"
                     onClick={handleReset}
-                    className="px-5 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-800 text-sm font-medium hover:bg-slate-50 cursor-pointer"
+                    className="px-5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-800 text-sm font-semibold hover:bg-slate-50 cursor-pointer"
                   >
                     Submit Another Payment
                   </button>
@@ -410,12 +412,22 @@ export function OnlinePaymentSection({
             ) : (
               <form
                 onSubmit={handleSubmit}
-                className="bg-white border border-slate-200 rounded-xl p-6 sm:p-8 space-y-5"
+                className="surface-card rounded-2xl p-6 sm:p-8 space-y-5"
               >
+                <div className="border-b border-slate-100 pb-4">
+                  <h2 className="font-display text-lg font-bold text-slate-950">
+                    Submit Fonepay Transaction Receipt
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Enter your exact Fonepay Trace / Transaction ID and upload the confirmation
+                    screenshot.
+                  </p>
+                </div>
+
                 {errorMsg && (
                   <div
                     role="alert"
-                    className="p-4 rounded-lg bg-rose-50 border border-rose-200 text-rose-900 text-sm flex items-start gap-2.5"
+                    className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-sm flex items-start gap-2.5"
                   >
                     <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-rose-700" aria-hidden="true" />
                     <span>{errorMsg}</span>
@@ -426,7 +438,7 @@ export function OnlinePaymentSection({
                   <div className="sm:col-span-2">
                     <label
                       htmlFor="pay-patient-name"
-                      className="block text-sm font-medium text-slate-800 mb-1.5"
+                      className="block text-sm font-semibold text-slate-800 mb-1.5"
                     >
                       Patient Full Name <span className="text-rose-600">*</span>
                     </label>
@@ -439,14 +451,14 @@ export function OnlinePaymentSection({
                       value={patientName}
                       onChange={(e) => setPatientName(e.target.value)}
                       placeholder="Enter patient's full name"
-                      className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-[#0F4C81]"
+                      className="clinical-input px-3.5 py-2.5 text-sm"
                     />
                   </div>
 
                   <div>
                     <label
                       htmlFor="pay-mobile"
-                      className="block text-sm font-medium text-slate-800 mb-1.5"
+                      className="block text-sm font-semibold text-slate-800 mb-1.5"
                     >
                       Mobile Number <span className="text-rose-600">*</span>
                     </label>
@@ -457,14 +469,14 @@ export function OnlinePaymentSection({
                       value={mobileNumber}
                       onChange={(e) => setMobileNumber(e.target.value)}
                       placeholder="e.g. 98XXXXXXXX"
-                      className="w-full px-3.5 py-2.5 text-sm font-mono border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-[#0F4C81]"
+                      className="clinical-input px-3.5 py-2.5 text-sm font-mono"
                     />
                   </div>
 
                   <div>
                     <label
                       htmlFor="pay-amount"
-                      className="block text-sm font-medium text-slate-800 mb-1.5"
+                      className="block text-sm font-semibold text-slate-800 mb-1.5"
                     >
                       Payment Amount (NPR) <span className="text-rose-600">*</span>
                     </label>
@@ -477,7 +489,7 @@ export function OnlinePaymentSection({
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
                       placeholder="e.g. 500"
-                      className="w-full px-3.5 py-2.5 text-sm font-mono tabular-nums border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-[#0F4C81]"
+                      className="clinical-input px-3.5 py-2.5 text-sm font-mono tabular-nums"
                     />
                   </div>
                 </div>
@@ -488,7 +500,11 @@ export function OnlinePaymentSection({
                       key={preset}
                       type="button"
                       onClick={() => setAmount(String(preset))}
-                      className="px-2.5 py-1 rounded border border-slate-300 bg-slate-50 text-xs font-mono text-slate-700 hover:border-[#0F4C81] hover:text-[#0F4C81] cursor-pointer"
+                      className={`px-3 py-1.5 rounded-lg border text-xs font-mono font-medium transition-colors cursor-pointer ${
+                        amount === String(preset)
+                          ? 'bg-sky-50 border-[#0F4C81] text-[#0F4C81]'
+                          : 'border-slate-300 bg-slate-50 text-slate-700 hover:border-[#0F4C81] hover:text-[#0F4C81]'
+                      }`}
                     >
                       NPR {preset}
                     </button>
@@ -499,7 +515,7 @@ export function OnlinePaymentSection({
                   <div>
                     <label
                       htmlFor="pay-purpose"
-                      className="block text-sm font-medium text-slate-800 mb-1.5"
+                      className="block text-sm font-semibold text-slate-800 mb-1.5"
                     >
                       Payment Purpose
                     </label>
@@ -510,7 +526,7 @@ export function OnlinePaymentSection({
                       maxLength={250}
                       value={purpose}
                       onChange={(e) => setPurpose(e.target.value)}
-                      className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-[#0F4C81]"
+                      className="clinical-input px-3.5 py-2.5 text-sm"
                     />
                     <datalist id="pay-purpose-options">
                       {PURPOSE_PRESETS.map((p) => (
@@ -522,7 +538,7 @@ export function OnlinePaymentSection({
                   <div>
                     <label
                       htmlFor="pay-booking-id"
-                      className="block text-sm font-medium text-slate-800 mb-1.5"
+                      className="block text-sm font-semibold text-slate-800 mb-1.5"
                     >
                       Appointment Booking ID (Optional)
                     </label>
@@ -532,7 +548,7 @@ export function OnlinePaymentSection({
                       value={bookingId}
                       onChange={(e) => setBookingId(e.target.value.toUpperCase())}
                       placeholder="SXH-2026-XXXXXX"
-                      className="w-full px-3.5 py-2.5 text-sm font-mono uppercase border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-[#0F4C81]"
+                      className="clinical-input px-3.5 py-2.5 text-sm font-mono uppercase"
                     />
                   </div>
                 </div>
@@ -540,7 +556,7 @@ export function OnlinePaymentSection({
                 <div>
                   <label
                     htmlFor="pay-transaction-id"
-                    className="block text-sm font-medium text-slate-800 mb-1.5"
+                    className="block text-sm font-semibold text-slate-800 mb-1.5"
                   >
                     Fonepay Transaction ID / Trace Ref <span className="text-rose-600">*</span>
                   </label>
@@ -557,18 +573,18 @@ export function OnlinePaymentSection({
                     }}
                     onBlur={handleTransactionBlur}
                     placeholder="Enter exact Transaction ID from payment receipt"
-                    className="w-full px-3.5 py-2.5 text-sm font-mono uppercase border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-[#0F4C81]"
+                    className="clinical-input px-3.5 py-2.5 text-sm font-mono uppercase"
                   />
                   {txCheckStatus === 'checking' && (
                     <p className="text-xs text-slate-500 mt-1">Checking Transaction ID uniqueness...</p>
                   )}
                   {txCheckStatus === 'available' && (
-                    <p className="text-xs text-emerald-700 mt-1">
+                    <p className="text-xs font-medium text-emerald-700 mt-1">
                       Transaction ID format verified and unique.
                     </p>
                   )}
                   {txCheckStatus === 'duplicate' && (
-                    <p className="text-xs text-rose-700 font-medium mt-1">
+                    <p className="text-xs text-rose-700 font-semibold mt-1">
                       This Transaction ID was already submitted. Duplicate submissions are blocked.
                     </p>
                   )}
@@ -576,12 +592,12 @@ export function OnlinePaymentSection({
 
                 {/* Payment Screenshot Upload */}
                 <div className="space-y-2">
-                  <span className="block text-sm font-medium text-slate-800">
+                  <span className="block text-sm font-semibold text-slate-800">
                     Upload Payment Screenshot <span className="text-rose-600">*</span>
                   </span>
-                  <div className="p-4 rounded-xl border border-dashed border-slate-300 bg-slate-50 flex flex-col sm:flex-row sm:items-center gap-4">
+                  <div className="p-4 sm:p-5 rounded-xl border border-dashed border-slate-300 bg-slate-50/80 flex flex-col sm:flex-row sm:items-center gap-4">
                     {screenshotDataUrl ? (
-                      <div className="relative w-24 h-24 rounded-lg overflow-hidden border border-slate-300 bg-white shrink-0">
+                      <div className="relative w-24 h-24 rounded-xl overflow-hidden border border-slate-300 bg-white shrink-0">
                         <img
                           src={screenshotDataUrl}
                           alt="Uploaded payment screenshot preview"
@@ -594,24 +610,24 @@ export function OnlinePaymentSection({
                             setScreenshotUrl('');
                           }}
                           aria-label="Remove screenshot"
-                          className="absolute top-1 right-1 p-1 rounded bg-slate-900/80 text-white hover:bg-slate-950 cursor-pointer"
+                          className="absolute top-1 right-1 p-1 rounded-md bg-slate-900/80 text-white hover:bg-slate-950 cursor-pointer"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     ) : (
-                      <div className="w-20 h-20 rounded-lg border border-slate-200 bg-white flex items-center justify-center shrink-0">
+                      <div className="w-20 h-20 rounded-xl border border-slate-200 bg-white flex items-center justify-center shrink-0">
                         <ImagePlus className="w-7 h-7 text-slate-400" aria-hidden="true" />
                       </div>
                     )}
 
-                    <div className="space-y-2 flex-1">
+                    <div className="space-y-2.5 flex-1">
                       <p className="text-xs text-slate-600 leading-relaxed">
                         Attach a clear screenshot from eSewa, Khalti, IME Pay, or your mobile
                         banking app showing the amount, recipient Spine X Hospital, and Transaction
                         ID.
                       </p>
-                      <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white border border-slate-300 text-xs font-medium text-slate-800 hover:bg-slate-100 cursor-pointer">
+                      <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-300 text-xs font-semibold text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer">
                         {uploadingScreenshot ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
                         ) : (
@@ -638,7 +654,7 @@ export function OnlinePaymentSection({
                 <button
                   type="submit"
                   disabled={submitting || uploadingScreenshot || txCheckStatus === 'duplicate'}
-                  className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg bg-[#0F4C81] text-white text-sm font-semibold hover:bg-[#0B3A63] disabled:bg-slate-300 transition-colors cursor-pointer disabled:cursor-not-allowed"
+                  className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 min-h-[48px] rounded-xl bg-[#0F4C81] text-white text-sm font-semibold shadow-[0_6px_18px_-4px_rgba(15,76,129,0.4)] hover:bg-[#0A365C] disabled:bg-slate-300 disabled:shadow-none transition-all cursor-pointer disabled:cursor-not-allowed"
                 >
                   {submitting && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
                   <span>{submitting ? 'Submitting Payment...' : 'Submit Payment'}</span>

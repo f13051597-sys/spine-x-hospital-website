@@ -1,3 +1,4 @@
+import { MotionConfig, motion } from 'motion/react';
 import { useCallback, useEffect, useState } from 'react';
 import { AdminDashboard } from './components/AdminDashboard';
 import { BookingSection } from './components/BookingSection';
@@ -104,10 +105,17 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
-        <Navbar activeView={activeView} onNavigate={navigate} />
+      <MotionConfig reducedMotion="user">
+        <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 overflow-x-clip">
+          <Navbar activeView={activeView} onNavigate={navigate} />
 
-        <main className="flex-1">
+          <motion.main
+            key={activeView}
+            initial={{ opacity: 0.72, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            className="flex-1"
+          >
           {activeView === 'home' && (
             <>
               <HeroSection
@@ -212,20 +220,21 @@ export default function App() {
               onCatalogUpdated={loadCatalog}
             />
           )}
-        </main>
+          </motion.main>
 
-        <HospitalChatbot
-          isOpen={isChatOpen}
-          onClose={() => setIsChatOpen(false)}
-          onBookNow={() => navigate('book')}
-        />
+          <HospitalChatbot
+            isOpen={isChatOpen}
+            onClose={() => setIsChatOpen(false)}
+            onBookNow={() => navigate('book')}
+          />
 
-        <Footer
-          onNavigate={navigate}
-          onToggleChat={() => setIsChatOpen((prev) => !prev)}
-          isChatOpen={isChatOpen}
-        />
-      </div>
+          <Footer
+            onNavigate={navigate}
+            onToggleChat={() => setIsChatOpen((prev) => !prev)}
+            isChatOpen={isChatOpen}
+          />
+        </div>
+      </MotionConfig>
     </ErrorBoundary>
   );
 }

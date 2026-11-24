@@ -37,6 +37,7 @@ import {
   UserPlus,
   X,
 } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { DEFAULT_OPD_SLOTS } from '../data/hospitalCatalog';
 import { auth, db, googleProvider, handleFirestoreError, OperationType } from '../lib/firebase';
@@ -652,8 +653,8 @@ export function AdminDashboard({
 
   if (authLoading) {
     return (
-      <section className="py-20 bg-slate-50 min-h-[70vh] flex items-center justify-center">
-        <div className="flex items-center gap-3 text-sm text-slate-600">
+      <section className="py-20 bg-slate-50 min-h-[75vh] flex items-center justify-center px-4">
+        <div className="surface-card rounded-2xl px-6 py-5 flex items-center gap-3 text-sm font-medium text-slate-700">
           <Loader2 className="w-5 h-5 animate-spin text-[#0F4C81]" aria-hidden="true" />
           <span>Checking hospital administrator session...</span>
         </div>
@@ -664,24 +665,29 @@ export function AdminDashboard({
   if (!user) {
     return (
       <section className="py-20 bg-slate-50 min-h-[75vh] flex items-center justify-center px-4">
-        <div className="max-w-md w-full bg-white border border-slate-200 rounded-xl p-8 space-y-6">
-          <div className="space-y-2">
-            <div className="w-11 h-11 rounded-lg bg-sky-50 border border-sky-200 flex items-center justify-center text-[#0F4C81]">
+        <div className="surface-card max-w-md w-full rounded-2xl p-8 space-y-6">
+          <div className="space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-sky-50 border border-sky-200/80 flex items-center justify-center text-[#0F4C81]">
               <ShieldCheck className="w-6 h-6" aria-hidden="true" />
             </div>
-            <h1 className="font-display text-2xl font-bold text-slate-950">
-              Hospital Admin Portal
-            </h1>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">
+                Spine X Staff Operations
+              </p>
+              <h1 className="font-display text-2xl font-bold tracking-tight text-slate-950 mt-1">
+                Hospital Admin Portal
+              </h1>
+            </div>
             <p className="text-sm text-slate-600 leading-relaxed">
               Sign in with an authorized Google account to manage patient appointments, consultant
-              photos &amp; OPD fees, appointment reminders, patient feedback, and departments.
+              photos &amp; OPD fees, Fonepay verifications, refunds, feedback, and departments.
             </p>
           </div>
 
           {authError && (
             <div
               role="alert"
-              className="p-3.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-900 text-xs flex items-start gap-2"
+              className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-xs flex items-start gap-2"
             >
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
               <span>{authError}</span>
@@ -691,7 +697,7 @@ export function AdminDashboard({
           <button
             type="button"
             onClick={handleGoogleSignIn}
-            className="w-full py-3 px-4 rounded-lg bg-[#0F4C81] text-white text-sm font-semibold hover:bg-[#0B3A63] transition-colors cursor-pointer"
+            className="w-full min-h-[46px] py-3 px-4 rounded-xl bg-[#0F4C81] text-white text-sm font-semibold hover:bg-[#0A365C] shadow-xs transition-colors cursor-pointer"
           >
             Sign in with Google
           </button>
@@ -703,25 +709,29 @@ export function AdminDashboard({
   if (unauthorized) {
     return (
       <section className="py-20 bg-slate-50 min-h-[75vh] flex items-center justify-center px-4">
-        <div className="max-w-lg w-full bg-white border border-rose-200 rounded-xl p-8 space-y-5">
-          <div className="flex items-start gap-3">
-            <ShieldAlert className="w-7 h-7 text-rose-700 shrink-0" aria-hidden="true" />
-            <div className="space-y-1">
+        <div className="surface-card max-w-lg w-full border-rose-200 rounded-2xl p-8 space-y-6">
+          <div className="flex items-start gap-3.5">
+            <div className="w-11 h-11 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-700 shrink-0">
+              <ShieldAlert className="w-6 h-6" aria-hidden="true" />
+            </div>
+            <div className="space-y-1.5">
               <h1 className="font-display text-xl font-bold text-slate-950">
                 Administrator Authorization Required
               </h1>
-              <p className="text-sm text-slate-600">
-                Signed in as <span className="font-mono font-medium">{user.email}</span> (UID:{' '}
-                <span className="font-mono text-xs">{user.uid}</span>). This account does not have
-                hospital administrator permissions.
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Signed in as <span className="font-mono font-semibold text-slate-900">{user.email}</span>.
+                This account does not have hospital administrator permissions.
               </p>
+              <div className="mt-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono text-slate-700 break-all">
+                UID: {user.uid}
+              </div>
             </div>
           </div>
 
           <button
             type="button"
             onClick={handleSignOut}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-slate-300 bg-white text-sm font-medium text-slate-800 hover:bg-slate-50 cursor-pointer"
+            className="inline-flex items-center gap-2 min-h-[42px] px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-sm font-semibold text-slate-800 hover:bg-slate-50 transition-colors cursor-pointer"
           >
             <LogOut className="w-4 h-4" aria-hidden="true" />
             <span>Sign Out &amp; Switch Account</span>
@@ -732,18 +742,20 @@ export function AdminDashboard({
   }
 
   return (
-    <section className="py-10 bg-slate-50 min-h-[80vh]">
+    <section className="py-10 lg:py-12 bg-slate-50 min-h-[80vh] border-b border-slate-200/80">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 space-y-8">
         {/* Top Admin Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-200">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-200/80">
           <div>
-            <p className="text-xs text-slate-500">Admin Console / {user.email}</p>
-            <h1 className="font-display text-2xl sm:text-3xl font-bold text-slate-950 mt-1">
+            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">
+              Admin Console · <span className="font-mono lowercase text-slate-600">{user.email}</span>
+            </p>
+            <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-slate-950 mt-1">
               Hospital Operations &amp; Appointments
             </h1>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2.5">
             <button
               type="button"
               onClick={async () => {
@@ -760,7 +772,7 @@ export function AdminDashboard({
                   );
                 }
               }}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer whitespace-nowrap shrink-0"
+              className="inline-flex items-center gap-1.5 min-h-[40px] px-3.5 py-2 rounded-xl border border-slate-300 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs transition-colors cursor-pointer whitespace-nowrap shrink-0"
             >
               <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
               <span>Sync Official Catalog</span>
@@ -768,7 +780,7 @@ export function AdminDashboard({
             <button
               type="button"
               onClick={handleSignOut}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-800 hover:bg-slate-50 cursor-pointer whitespace-nowrap shrink-0"
+              className="inline-flex items-center gap-1.5 min-h-[40px] px-3.5 py-2 rounded-xl border border-slate-300 bg-white text-xs font-semibold text-slate-800 hover:bg-slate-50 shadow-2xs transition-colors cursor-pointer whitespace-nowrap shrink-0"
             >
               <LogOut className="w-3.5 h-3.5" aria-hidden="true" />
               <span>Sign Out</span>
@@ -778,41 +790,41 @@ export function AdminDashboard({
 
         {/* Daily & Monthly KPI Row */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-          <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <div className="text-xs text-slate-500">Today ({today})</div>
-            <div className="font-mono tabular-nums text-2xl font-bold text-[#0F4C81] mt-1">
+          <div className="surface-card rounded-2xl p-4 sm:p-5">
+            <div className="text-xs font-medium text-slate-500">Today ({today})</div>
+            <div className="font-mono tabular-nums text-2xl font-bold text-[#0F4C81] mt-1.5">
               {stats.todayCount}
             </div>
             <div className="text-xs text-slate-600 mt-0.5">Daily Bookings</div>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <div className="text-xs text-slate-500">Month ({month})</div>
-            <div className="font-mono tabular-nums text-2xl font-bold text-slate-950 mt-1">
+          <div className="surface-card rounded-2xl p-4 sm:p-5">
+            <div className="text-xs font-medium text-slate-500">Month ({month})</div>
+            <div className="font-mono tabular-nums text-2xl font-bold text-slate-950 mt-1.5">
               {stats.monthCount}
             </div>
             <div className="text-xs text-slate-600 mt-0.5">Monthly Bookings</div>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <div className="text-xs text-slate-500">Action Required</div>
-            <div className="font-mono tabular-nums text-2xl font-bold text-amber-700 mt-1">
+          <div className="surface-card rounded-2xl p-4 sm:p-5">
+            <div className="text-xs font-medium text-slate-500">Action Required</div>
+            <div className="font-mono tabular-nums text-2xl font-bold text-amber-700 mt-1.5">
               {stats.pendingCount}
             </div>
             <div className="text-xs text-slate-600 mt-0.5">Pending Approval</div>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <div className="text-xs text-slate-500">Reminders Queue</div>
-            <div className="font-mono tabular-nums text-2xl font-bold text-emerald-700 mt-1">
+          <div className="surface-card rounded-2xl p-4 sm:p-5">
+            <div className="text-xs font-medium text-slate-500">Reminders Queue</div>
+            <div className="font-mono tabular-nums text-2xl font-bold text-emerald-700 mt-1.5">
               {stats.dueRemindersCount}
             </div>
-            <div className="text-xs text-slate-600 mt-0.5">Upcoming Pending Alerts</div>
+            <div className="text-xs text-slate-600 mt-0.5">Upcoming Alerts</div>
           </div>
 
-          <div className="col-span-2 lg:col-span-1 bg-white border border-slate-200 rounded-xl p-4">
-            <div className="text-xs text-slate-500">Month Est. OPD</div>
-            <div className="font-mono tabular-nums text-2xl font-bold text-[#0F4C81] mt-1">
+          <div className="col-span-2 lg:col-span-1 surface-card rounded-2xl p-4 sm:p-5">
+            <div className="text-xs font-medium text-slate-500">Month Est. OPD</div>
+            <div className="font-mono tabular-nums text-2xl font-bold text-[#0F4C81] mt-1.5">
               NPR {stats.monthRevenue.toLocaleString()}
             </div>
             <div className="text-xs text-slate-600 mt-0.5">Active OPD Value</div>
@@ -820,43 +832,45 @@ export function AdminDashboard({
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-200/70 rounded-lg w-fit">
-          {(
-            [
-              { id: 'appointments', label: `Appointments (${appointments.length})` },
-              {
-                id: 'payments',
-                label: `Payments (${payments.length}${pendingPaymentsCount > 0 ? ` · ${pendingPaymentsCount} Pending` : ''})`,
-              },
-              {
-                id: 'refunds',
-                label: `Refunds (${refunds.length}${pendingRefundsCount > 0 ? ` · ${pendingRefundsCount} Open` : ''})`,
-              },
-              { id: 'doctors', label: `Doctors (${doctors.length})` },
-              { id: 'departments', label: `Departments (${departments.length})` },
-              { id: 'feedback', label: `Feedback (${feedbackItems.length})` },
-              { id: 'access', label: 'Admin Access' },
-            ] as { id: AdminTab; label: string }[]
-          ).map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                activeTab === tab.id
-                  ? 'bg-white text-slate-950 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-950'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="max-w-full overflow-x-auto pb-1">
+          <div className="inline-flex items-center gap-1 p-1 bg-slate-200/75 rounded-xl">
+            {(
+              [
+                { id: 'appointments', label: `Appointments (${appointments.length})` },
+                {
+                  id: 'payments',
+                  label: `Payments (${payments.length}${pendingPaymentsCount > 0 ? ` · ${pendingPaymentsCount} Pending` : ''})`,
+                },
+                {
+                  id: 'refunds',
+                  label: `Refunds (${refunds.length}${pendingRefundsCount > 0 ? ` · ${pendingRefundsCount} Open` : ''})`,
+                },
+                { id: 'doctors', label: `Doctors (${doctors.length})` },
+                { id: 'departments', label: `Departments (${departments.length})` },
+                { id: 'feedback', label: `Feedback (${feedbackItems.length})` },
+                { id: 'access', label: 'Admin Access' },
+              ] as { id: AdminTab; label: string }[]
+            ).map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`min-h-[38px] px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+                  activeTab === tab.id
+                    ? 'bg-white text-slate-950 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-950'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {(actionMsg || actionError) && (
           <div
             role="status"
-            className={`p-4 rounded-lg border text-sm flex items-center justify-between gap-3 ${
+            className={`p-4 rounded-2xl border text-sm flex items-center justify-between gap-3 shadow-2xs ${
               actionError
                 ? 'bg-rose-50 border-rose-200 text-rose-900'
                 : 'bg-emerald-50 border-emerald-200 text-emerald-900'
@@ -870,7 +884,7 @@ export function AdminDashboard({
                 setActionMsg(null);
               }}
               aria-label="Dismiss notice"
-              className="cursor-pointer"
+              className="p-1 rounded-lg hover:bg-black/5 cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -879,11 +893,11 @@ export function AdminDashboard({
 
         {/* TAB 1: APPOINTMENTS & REMINDERS */}
         {activeTab === 'appointments' && (
-          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-            <div className="p-4 sm:p-5 border-b border-slate-200 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="surface-card rounded-2xl overflow-hidden">
+            <div className="p-4 sm:p-5 border-b border-slate-200/80 bg-slate-50/60 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <div className="relative">
                 <Search
-                  className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                  className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
                   aria-hidden="true"
                 />
                 <input
@@ -891,13 +905,13 @@ export function AdminDashboard({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search name, phone, or ID..."
-                  className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:border-[#0F4C81]"
+                  className="clinical-input pl-10 pr-3 py-2 text-sm min-h-[42px]"
                 />
               </div>
 
               <div className="relative">
                 <Calendar
-                  className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                  className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
                   aria-hidden="true"
                 />
                 <input
@@ -905,7 +919,7 @@ export function AdminDashboard({
                   value={dateFilter}
                   onChange={(e) => setDateFilter(e.target.value)}
                   aria-label="Filter by appointment date"
-                  className="w-full pl-9 pr-3 py-2 text-sm font-mono border border-slate-300 rounded-lg focus:outline-none focus:border-[#0F4C81]"
+                  className="clinical-input pl-10 pr-3 py-2 text-sm font-mono min-h-[42px]"
                 />
               </div>
 
@@ -913,7 +927,7 @@ export function AdminDashboard({
                 value={doctorFilter}
                 onChange={(e) => setDoctorFilter(e.target.value)}
                 aria-label="Filter by doctor"
-                className="px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:border-[#0F4C81]"
+                className="clinical-input px-3 py-2 text-sm min-h-[42px]"
               >
                 <option value="all">All Doctors</option>
                 {doctors.map((d) => (
@@ -932,7 +946,7 @@ export function AdminDashboard({
                     )
                   }
                   aria-label="Filter by status"
-                  className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:border-[#0F4C81]"
+                  className="clinical-input flex-1 px-3 py-2 text-sm min-h-[42px]"
                 >
                   <option value="all">All Statuses</option>
                   <option value="due_reminders">Due Reminders</option>
@@ -951,7 +965,7 @@ export function AdminDashboard({
                       setDoctorFilter('all');
                       setStatusFilter('all');
                     }}
-                    className="px-3 py-2 text-xs font-medium text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 cursor-pointer"
+                    className="min-h-[42px] px-3.5 py-2 text-xs font-semibold text-slate-700 border border-slate-300 bg-white rounded-xl hover:bg-slate-50 transition-colors cursor-pointer whitespace-nowrap"
                   >
                     Clear
                   </button>
@@ -960,13 +974,13 @@ export function AdminDashboard({
             </div>
 
             {loadingAppointments ? (
-              <div className="p-12 text-center text-sm text-slate-600 flex items-center justify-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+              <div className="p-12 text-center text-sm text-slate-600 flex items-center justify-center gap-2.5">
+                <Loader2 className="w-4 h-4 animate-spin text-[#0F4C81]" aria-hidden="true" />
                 <span>Loading patient appointments...</span>
               </div>
             ) : filteredAppointments.length === 0 ? (
               <div className="p-12 text-center space-y-2">
-                <p className="font-medium text-slate-900">No appointments found</p>
+                <p className="font-display font-bold text-slate-900">No appointments found</p>
                 <p className="text-sm text-slate-500">
                   {appointments.length === 0
                     ? 'Booked appointments from patients will appear here in real time.'
@@ -974,19 +988,22 @@ export function AdminDashboard({
                 </p>
               </div>
             ) : (
-              <div className="divide-y divide-slate-200">
+              <div className="divide-y divide-slate-200/80">
                 {filteredAppointments.map((appt) => {
                   const isBusy = updatingApptId === appt.id;
                   const isEditingNote = editingNoteId === appt.id;
                   return (
-                    <div key={appt.id} className="p-4 sm:p-5 space-y-3 hover:bg-slate-50/70">
+                    <div
+                      key={appt.id}
+                      className="p-4 sm:p-6 space-y-3 hover:bg-slate-50/70 transition-colors"
+                    >
                       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                        <div className="space-y-1">
+                        <div className="space-y-1.5">
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                            <span className="font-mono tabular-nums text-xs font-semibold text-[#0F4C81]">
+                            <span className="font-mono tabular-nums text-xs font-bold text-[#0F4C81]">
                               {appt.bookingId}
                             </span>
-                            <span className="font-display font-semibold text-slate-950">
+                            <span className="font-display font-bold text-slate-950">
                               {appt.patientName}
                             </span>
                             <span className="text-xs text-slate-600 font-mono tabular-nums">
@@ -995,13 +1012,13 @@ export function AdminDashboard({
                             </span>
                           </div>
                           <div className="text-sm text-slate-700">
-                            <span className="font-medium">{appt.doctorName}</span> ·{' '}
+                            <span className="font-semibold text-slate-900">{appt.doctorName}</span> ·{' '}
                             <span>{appt.departmentName}</span> ·{' '}
                             <span className="font-mono tabular-nums">
                               {appt.appointmentDate} at {appt.timeSlot}
                             </span>{' '}
                             ·{' '}
-                            <span className="font-mono tabular-nums">
+                            <span className="font-mono tabular-nums font-medium">
                               {appt.opdFee > 0 ? `NPR ${appt.opdFee}` : 'Fee at Desk'}
                             </span>
                           </div>
@@ -1031,7 +1048,7 @@ export function AdminDashboard({
                                 <span className="font-mono">{appt.transactionId}</span>
                               </span>
                               <span
-                                className={`px-2 py-0.5 rounded border text-[11px] font-medium capitalize ${
+                                className={`px-2 py-0.5 rounded-md border text-[11px] font-semibold capitalize ${
                                   appt.paymentStatus === 'verified'
                                     ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
                                     : appt.paymentStatus === 'rejected'
@@ -1049,13 +1066,15 @@ export function AdminDashboard({
                             <p className="text-xs text-slate-600">Reason: {appt.reason}</p>
                           )}
                           {appt.adminNote && (
-                            <p className="text-xs text-[#0F4C81]">Note: {appt.adminNote}</p>
+                            <p className="text-xs font-medium text-[#0F4C81]">
+                              Note: {appt.adminNote}
+                            </p>
                           )}
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2 shrink-0">
                           <span
-                            className={`px-2.5 py-1 rounded border text-xs font-medium capitalize ${
+                            className={`px-2.5 py-1 rounded-md border text-xs font-semibold capitalize ${
                               STATUS_BADGE_MAP[appt.status]
                             }`}
                           >
@@ -1067,7 +1086,7 @@ export function AdminDashboard({
                               type="button"
                               disabled={isBusy}
                               onClick={() => handleStatusChange(appt, 'approved')}
-                              className="px-3 py-1.5 rounded-lg bg-emerald-700 text-white text-xs font-medium hover:bg-emerald-800 disabled:opacity-50 cursor-pointer"
+                              className="min-h-[36px] px-3 py-1.5 rounded-xl bg-emerald-700 text-white text-xs font-semibold hover:bg-emerald-800 disabled:opacity-50 transition-colors cursor-pointer"
                             >
                               Approve
                             </button>
@@ -1080,7 +1099,7 @@ export function AdminDashboard({
                                 type="button"
                                 disabled={isBusy}
                                 onClick={() => handleStatusChange(appt, 'completed')}
-                                className="px-3 py-1.5 rounded-lg bg-[#0F4C81] text-white text-xs font-medium hover:bg-[#0B3A63] disabled:opacity-50 cursor-pointer"
+                                className="min-h-[36px] px-3 py-1.5 rounded-xl bg-[#0F4C81] text-white text-xs font-semibold hover:bg-[#0A365C] disabled:opacity-50 transition-colors cursor-pointer"
                               >
                                 Complete
                               </button>
@@ -1091,7 +1110,7 @@ export function AdminDashboard({
                               type="button"
                               disabled={isBusy}
                               onClick={() => handleStatusChange(appt, 'rejected')}
-                              className="px-3 py-1.5 rounded-lg border border-rose-300 bg-rose-50 text-rose-800 text-xs font-medium hover:bg-rose-100 disabled:opacity-50 cursor-pointer"
+                              className="min-h-[36px] px-3 py-1.5 rounded-xl border border-rose-300 bg-rose-50 text-rose-800 text-xs font-semibold hover:bg-rose-100 disabled:opacity-50 transition-colors cursor-pointer"
                             >
                               Reject
                             </button>
@@ -1103,7 +1122,7 @@ export function AdminDashboard({
                                 type="button"
                                 disabled={isBusy}
                                 onClick={() => handleStatusChange(appt, 'cancelled')}
-                                className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 text-xs font-medium hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
+                                className="min-h-[36px] px-3 py-1.5 rounded-xl border border-slate-300 bg-white text-slate-700 text-xs font-semibold hover:bg-slate-50 disabled:opacity-50 transition-colors cursor-pointer"
                               >
                                 Cancel
                               </button>
@@ -1119,7 +1138,7 @@ export function AdminDashboard({
                                 })}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-800 text-xs font-medium hover:bg-emerald-100"
+                                className="inline-flex items-center gap-1 min-h-[36px] px-3 py-1.5 rounded-xl border border-emerald-600/30 bg-emerald-50 text-emerald-800 text-xs font-semibold hover:bg-emerald-100 transition-colors"
                               >
                                 <MessageCircle className="w-3.5 h-3.5" aria-hidden="true" />
                                 <span>WhatsApp Remind</span>
@@ -1131,7 +1150,7 @@ export function AdminDashboard({
                                   onClick={() =>
                                     handleStatusChange(appt, appt.status, appt.adminNote, 'sent')
                                   }
-                                  className="px-2.5 py-1.5 rounded-lg border border-sky-300 bg-sky-50 text-[#0F4C81] text-xs font-medium hover:bg-sky-100 disabled:opacity-50 cursor-pointer"
+                                  className="min-h-[36px] px-3 py-1.5 rounded-xl border border-sky-300 bg-sky-50 text-[#0F4C81] text-xs font-semibold hover:bg-sky-100 disabled:opacity-50 transition-colors cursor-pointer"
                                 >
                                   Mark Reminded
                                 </button>
@@ -1145,7 +1164,7 @@ export function AdminDashboard({
                               setEditingNoteId(isEditingNote ? null : appt.id);
                               setNoteDraft(appt.adminNote || '');
                             }}
-                            className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 text-xs font-medium hover:bg-slate-50 cursor-pointer"
+                            className="min-h-[36px] px-3 py-1.5 rounded-xl border border-slate-300 bg-white text-slate-700 text-xs font-semibold hover:bg-slate-50 transition-colors cursor-pointer"
                           >
                             {isEditingNote ? 'Close Note' : 'Add Note'}
                           </button>
@@ -1160,13 +1179,13 @@ export function AdminDashboard({
                             value={noteDraft}
                             onChange={(e) => setNoteDraft(e.target.value)}
                             placeholder="Optional note visible on patient status check..."
-                            className="flex-1 px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:border-[#0F4C81]"
+                            className="clinical-input flex-1 px-3.5 py-2 text-xs min-h-[40px]"
                           />
                           <button
                             type="button"
                             disabled={isBusy}
                             onClick={() => handleStatusChange(appt, appt.status, noteDraft)}
-                            className="px-4 py-2 rounded-lg bg-[#0F4C81] text-white text-xs font-medium hover:bg-[#0B3A63] cursor-pointer"
+                            className="min-h-[40px] px-4 py-2 rounded-xl bg-[#0F4C81] text-white text-xs font-semibold hover:bg-[#0A365C] transition-colors cursor-pointer"
                           >
                             Save Note
                           </button>
@@ -1183,13 +1202,13 @@ export function AdminDashboard({
         {/* TAB: PAYMENT MANAGEMENT */}
         {activeTab === 'payments' && (
           <div className="space-y-4">
-            <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 space-y-4">
+            <div className="surface-card rounded-2xl p-5 sm:p-6 space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <h2 className="font-display text-lg font-semibold text-slate-950">
+                  <h2 className="font-display text-lg font-bold text-slate-950">
                     Fonepay QR Payment Verification &amp; History
                   </h2>
-                  <p className="text-xs text-slate-600">
+                  <p className="text-xs text-slate-600 mt-0.5">
                     {fonepayApiConfigured
                       ? 'Official Fonepay Merchant Verification API is configured. Verify via API or inspect receipts manually.'
                       : 'Accounts Desk Manual Verification Mode active. Inspect uploaded receipts & Fonepay statements before verifying.'}
@@ -1198,7 +1217,7 @@ export function AdminDashboard({
 
                 <div className="relative w-full sm:w-72">
                   <Search
-                    className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                    className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
                     aria-hidden="true"
                   />
                   <input
@@ -1206,7 +1225,7 @@ export function AdminDashboard({
                     value={paymentSearch}
                     onChange={(e) => setPaymentSearch(e.target.value)}
                     placeholder="Search Pay Ref, Tx ID, patient..."
-                    className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-lg focus:outline-none focus:border-[#0F4C81]"
+                    className="clinical-input pl-10 pr-3 py-2 text-xs sm:text-sm min-h-[42px]"
                   />
                 </div>
               </div>
@@ -1241,10 +1260,10 @@ export function AdminDashboard({
                     key={f.id}
                     type="button"
                     onClick={() => setPaymentFilter(f.id)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border cursor-pointer ${
+                    className={`min-h-[36px] px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-colors cursor-pointer ${
                       paymentFilter === f.id
-                        ? 'bg-[#0F4C81] text-white border-[#0F4C81]'
-                        : 'bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100'
+                        ? 'bg-[#0F4C81] text-white border-[#0F4C81] shadow-xs'
+                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                     }`}
                   >
                     {f.label}
@@ -1253,29 +1272,32 @@ export function AdminDashboard({
               </div>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <div className="surface-card rounded-2xl overflow-hidden">
               {filteredPayments.length === 0 ? (
                 <div className="p-12 text-center text-sm text-slate-500">
                   No payment submissions match this filter yet.
                 </div>
               ) : (
-                <div className="divide-y divide-slate-200">
+                <div className="divide-y divide-slate-200/80">
                   {filteredPayments.map((pay) => {
                     const isBusy = busyPaymentId === pay.id;
                     const isRejecting = rejectingPaymentId === pay.id;
                     return (
-                      <div key={pay.id} className="p-4 sm:p-5 space-y-3 hover:bg-slate-50/70">
+                      <div
+                        key={pay.id}
+                        className="p-4 sm:p-6 space-y-3 hover:bg-slate-50/70 transition-colors"
+                      >
                         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                          <div className="space-y-1">
-                            <div className="flex flex-wrap items-center gap-2.5">
+                          <div className="space-y-1.5">
+                            <div className="flex flex-wrap items-center gap-2">
                               <span className="font-mono text-xs font-bold text-[#0F4C81]">
                                 {pay.paymentRef}
                               </span>
-                              <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[11px] font-medium capitalize">
-                                {pay.paymentCategory}
+                              <span className="text-xs font-medium text-slate-500 capitalize">
+                                · {pay.paymentCategory}
                               </span>
                               <span
-                                className={`px-2.5 py-0.5 rounded border text-xs font-medium ${
+                                className={`px-2.5 py-0.5 rounded-md border text-xs font-semibold ${
                                   pay.verificationStatus === 'verified'
                                     ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
                                     : pay.verificationStatus === 'rejected'
@@ -1290,15 +1312,16 @@ export function AdminDashboard({
                             </div>
 
                             <div className="text-sm text-slate-900">
-                              <span className="font-display font-semibold">{pay.patientName}</span>{' '}
-                              · <span className="font-mono text-xs">{pay.mobileNumber}</span> ·{' '}
-                              <span className="font-mono font-bold text-[#0F4C81]">
+                              <span className="font-display font-bold">{pay.patientName}</span> ·{' '}
+                              <span className="font-mono text-xs">{pay.mobileNumber}</span> ·{' '}
+                              <span className="font-mono tabular-nums font-bold text-[#0F4C81]">
                                 NPR {pay.amount.toLocaleString()}
                               </span>
                             </div>
 
                             <div className="text-xs text-slate-600 font-mono">
-                              Transaction ID: <strong className="text-slate-900">{pay.transactionId}</strong>
+                              Transaction ID:{' '}
+                              <strong className="text-slate-900">{pay.transactionId}</strong>
                               {pay.bookingId ? ` · Booking: ${pay.bookingId}` : ''}
                               {pay.doctorName ? ` · ${pay.doctorName}` : ''}
                               {pay.appointmentDate ? ` (${pay.appointmentDate} ${pay.timeSlot})` : ''}
@@ -1311,7 +1334,7 @@ export function AdminDashboard({
                               </p>
                             )}
                             {pay.rejectionReason && (
-                              <p className="text-xs text-rose-700">
+                              <p className="text-xs text-rose-700 font-medium">
                                 Rejection Reason: {pay.rejectionReason}
                               </p>
                             )}
@@ -1322,7 +1345,7 @@ export function AdminDashboard({
                               <button
                                 type="button"
                                 onClick={() => setPreviewScreenshotPayment(pay)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-800 hover:bg-slate-50 cursor-pointer"
+                                className="inline-flex items-center gap-1.5 min-h-[36px] px-3 py-1.5 rounded-xl border border-slate-300 bg-white text-xs font-semibold text-slate-800 hover:bg-slate-50 transition-colors cursor-pointer"
                               >
                                 <Eye className="w-3.5 h-3.5" />
                                 <span>View Screenshot</span>
@@ -1336,7 +1359,7 @@ export function AdminDashboard({
                                     type="button"
                                     disabled={isBusy}
                                     onClick={() => void handleApiVerifyPayment(pay)}
-                                    className="px-3 py-1.5 rounded-lg bg-[#0F4C81] text-white text-xs font-medium hover:bg-[#0B3A63] disabled:opacity-50 cursor-pointer"
+                                    className="min-h-[36px] px-3 py-1.5 rounded-xl bg-[#0F4C81] text-white text-xs font-semibold hover:bg-[#0A365C] disabled:opacity-50 transition-colors cursor-pointer"
                                   >
                                     Check Fonepay API
                                   </button>
@@ -1345,7 +1368,7 @@ export function AdminDashboard({
                                   type="button"
                                   disabled={isBusy}
                                   onClick={() => void handleManualVerifyPayment(pay)}
-                                  className="px-3 py-1.5 rounded-lg bg-emerald-700 text-white text-xs font-medium hover:bg-emerald-800 disabled:opacity-50 cursor-pointer"
+                                  className="min-h-[36px] px-3 py-1.5 rounded-xl bg-emerald-700 text-white text-xs font-semibold hover:bg-emerald-800 disabled:opacity-50 transition-colors cursor-pointer"
                                 >
                                   {pay.paymentCategory === 'appointment'
                                     ? 'Verify & Auto-Approve Appt'
@@ -1361,7 +1384,7 @@ export function AdminDashboard({
                                 onClick={() =>
                                   setRejectingPaymentId(isRejecting ? null : pay.id)
                                 }
-                                className="px-3 py-1.5 rounded-lg border border-rose-300 bg-rose-50 text-rose-800 text-xs font-medium hover:bg-rose-100 cursor-pointer"
+                                className="min-h-[36px] px-3 py-1.5 rounded-xl border border-rose-300 bg-rose-50 text-rose-800 text-xs font-semibold hover:bg-rose-100 transition-colors cursor-pointer"
                               >
                                 Reject
                               </button>
@@ -1382,13 +1405,13 @@ export function AdminDashboard({
                                 }))
                               }
                               placeholder="Reason for rejecting payment (e.g. Transaction ID not settled)..."
-                              className="flex-1 px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:border-rose-500"
+                              className="clinical-input flex-1 px-3.5 py-2 text-xs min-h-[40px]"
                             />
                             <button
                               type="button"
                               disabled={isBusy}
                               onClick={() => void handleRejectPayment(pay)}
-                              className="px-4 py-2 rounded-lg bg-rose-700 text-white text-xs font-medium hover:bg-rose-800 cursor-pointer"
+                              className="min-h-[40px] px-4 py-2 rounded-xl bg-rose-700 text-white text-xs font-semibold hover:bg-rose-800 transition-colors cursor-pointer"
                             >
                               Confirm Rejection
                             </button>
@@ -1406,12 +1429,12 @@ export function AdminDashboard({
         {/* TAB: REFUND MANAGEMENT */}
         {activeTab === 'refunds' && (
           <div className="space-y-4">
-            <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="surface-card rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h2 className="font-display text-lg font-semibold text-slate-950">
+                <h2 className="font-display text-lg font-bold text-slate-950">
                   Patient Refund Requests &amp; Disbursement Log
                 </h2>
-                <p className="text-xs text-slate-600">
+                <p className="text-xs text-slate-600 mt-0.5">
                   Approve or reject eligible refund requests, then record the actual bank/Fonepay
                   refund transaction reference before marking as Refunded.
                 </p>
@@ -1422,10 +1445,10 @@ export function AdminDashboard({
                     key={status}
                     type="button"
                     onClick={() => setRefundFilter(status)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border capitalize cursor-pointer ${
+                    className={`min-h-[36px] px-3.5 py-1.5 rounded-xl text-xs font-semibold border capitalize transition-colors cursor-pointer ${
                       refundFilter === status
-                        ? 'bg-[#0F4C81] text-white border-[#0F4C81]'
-                        : 'bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100'
+                        ? 'bg-[#0F4C81] text-white border-[#0F4C81] shadow-xs'
+                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                     }`}
                   >
                     {status}
@@ -1434,26 +1457,29 @@ export function AdminDashboard({
               </div>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <div className="surface-card rounded-2xl overflow-hidden">
               {filteredRefunds.length === 0 ? (
                 <div className="p-12 text-center text-sm text-slate-500">
                   No refund requests match the selected filter.
                 </div>
               ) : (
-                <div className="divide-y divide-slate-200">
+                <div className="divide-y divide-slate-200/80">
                   {filteredRefunds.map((ref) => {
                     const isBusy = busyRefundId === ref.id;
                     const isMarkingRefunded = markingRefundId === ref.id;
                     return (
-                      <div key={ref.id} className="p-4 sm:p-5 space-y-3 hover:bg-slate-50/70">
+                      <div
+                        key={ref.id}
+                        className="p-4 sm:p-6 space-y-3 hover:bg-slate-50/70 transition-colors"
+                      >
                         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                          <div className="space-y-1">
-                            <div className="flex flex-wrap items-center gap-2.5">
+                          <div className="space-y-1.5">
+                            <div className="flex flex-wrap items-center gap-2">
                               <span className="font-mono text-xs font-bold text-[#0F4C81]">
                                 {ref.refundRef}
                               </span>
                               <span
-                                className={`px-2.5 py-0.5 rounded border text-xs font-medium capitalize ${
+                                className={`px-2.5 py-0.5 rounded-md border text-xs font-semibold capitalize ${
                                   ref.status === 'refunded'
                                     ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
                                     : ref.status === 'approved'
@@ -1465,7 +1491,8 @@ export function AdminDashboard({
                               >
                                 {ref.status}
                               </span>
-                              <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[11px]">
+                              <span className="text-xs font-medium text-slate-500">
+                                ·{' '}
                                 {ref.eligibilityType === 'hospital_cancelled'
                                   ? 'Hospital-Cancelled (100%)'
                                   : 'Standard >= 24h Policy'}
@@ -1473,9 +1500,9 @@ export function AdminDashboard({
                             </div>
 
                             <div className="text-sm text-slate-900">
-                              <span className="font-display font-semibold">{ref.patientName}</span> ·{' '}
+                              <span className="font-display font-bold">{ref.patientName}</span> ·{' '}
                               <span className="font-mono text-xs">{ref.mobileNumber}</span> ·{' '}
-                              <span className="font-mono font-bold text-[#0F4C81]">
+                              <span className="font-mono tabular-nums font-bold text-[#0F4C81]">
                                 NPR {ref.amount.toLocaleString()}
                               </span>
                             </div>
@@ -1489,13 +1516,15 @@ export function AdminDashboard({
 
                             <p className="text-xs text-slate-700">Patient Reason: {ref.reason}</p>
                             {ref.refundTxRef && (
-                              <p className="text-xs font-medium text-emerald-800">
+                              <p className="text-xs font-semibold text-emerald-800">
                                 Refund Transfer Tx Ref:{' '}
                                 <span className="font-mono font-bold">{ref.refundTxRef}</span>
                               </p>
                             )}
                             {ref.adminNote && (
-                              <p className="text-xs text-[#0F4C81]">Admin Note: {ref.adminNote}</p>
+                              <p className="text-xs font-medium text-[#0F4C81]">
+                                Admin Note: {ref.adminNote}
+                              </p>
                             )}
                           </div>
 
@@ -1506,7 +1535,7 @@ export function AdminDashboard({
                                   type="button"
                                   disabled={isBusy}
                                   onClick={() => void handleRefundTransition(ref, 'approved')}
-                                  className="px-3 py-1.5 rounded-lg bg-[#0F4C81] text-white text-xs font-medium hover:bg-[#0B3A63] disabled:opacity-50 cursor-pointer"
+                                  className="min-h-[36px] px-3 py-1.5 rounded-xl bg-[#0F4C81] text-white text-xs font-semibold hover:bg-[#0A365C] disabled:opacity-50 transition-colors cursor-pointer"
                                 >
                                   Approve
                                 </button>
@@ -1514,7 +1543,7 @@ export function AdminDashboard({
                                   type="button"
                                   disabled={isBusy}
                                   onClick={() => void handleRefundTransition(ref, 'rejected')}
-                                  className="px-3 py-1.5 rounded-lg border border-rose-300 bg-rose-50 text-rose-800 text-xs font-medium hover:bg-rose-100 disabled:opacity-50 cursor-pointer"
+                                  className="min-h-[36px] px-3 py-1.5 rounded-xl border border-rose-300 bg-rose-50 text-rose-800 text-xs font-semibold hover:bg-rose-100 disabled:opacity-50 transition-colors cursor-pointer"
                                 >
                                   Reject
                                 </button>
@@ -1528,7 +1557,7 @@ export function AdminDashboard({
                                 onClick={() =>
                                   setMarkingRefundId(isMarkingRefunded ? null : ref.id)
                                 }
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-700 text-white text-xs font-medium hover:bg-emerald-800 cursor-pointer"
+                                className="inline-flex items-center gap-1.5 min-h-[36px] px-3 py-1.5 rounded-xl bg-emerald-700 text-white text-xs font-semibold hover:bg-emerald-800 transition-colors cursor-pointer"
                               >
                                 <RotateCcw className="w-3.5 h-3.5" />
                                 <span>Mark Refunded</span>
@@ -1552,7 +1581,7 @@ export function AdminDashboard({
                                 }))
                               }
                               placeholder="Actual Bank / Fonepay Refund Tx Ref *"
-                              className="sm:col-span-5 px-3 py-2 text-xs font-mono border border-slate-300 rounded-lg focus:outline-none focus:border-emerald-600"
+                              className="clinical-input sm:col-span-5 px-3.5 py-2 text-xs font-mono min-h-[40px]"
                             />
                             <input
                               type="text"
@@ -1565,13 +1594,13 @@ export function AdminDashboard({
                                 }))
                               }
                               placeholder="Optional accounts desk note..."
-                              className="sm:col-span-5 px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:border-[#0F4C81]"
+                              className="clinical-input sm:col-span-5 px-3.5 py-2 text-xs min-h-[40px]"
                             />
                             <button
                               type="button"
                               disabled={isBusy}
                               onClick={() => void handleRefundTransition(ref, 'refunded')}
-                              className="sm:col-span-2 px-3 py-2 rounded-lg bg-emerald-700 text-white text-xs font-medium hover:bg-emerald-800 cursor-pointer"
+                              className="sm:col-span-2 min-h-[40px] px-3 py-2 rounded-xl bg-emerald-700 text-white text-xs font-semibold hover:bg-emerald-800 transition-colors cursor-pointer"
                             >
                               Confirm Sent
                             </button>
@@ -1589,8 +1618,8 @@ export function AdminDashboard({
         {/* TAB 2: DOCTORS (with Individual Photo Upload, Qualifications, Schedule & Fees) */}
         {activeTab === 'doctors' && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="font-display text-lg font-semibold text-slate-950">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="font-display text-lg font-bold text-slate-950">
                 Manage Doctors, Photos, Schedules, OPD Fees &amp; Time Slots
               </h2>
               <button
@@ -1613,7 +1642,7 @@ export function AdminDashboard({
                     sortOrder: doctors.length + 1,
                   });
                 }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#0F4C81] text-white text-xs sm:text-sm font-medium hover:bg-[#0B3A63] cursor-pointer"
+                className="inline-flex items-center gap-1.5 min-h-[40px] px-4 py-2 rounded-xl bg-[#0F4C81] text-white text-xs sm:text-sm font-semibold hover:bg-[#0A365C] shadow-xs transition-colors cursor-pointer"
               >
                 <Plus className="w-4 h-4" aria-hidden="true" />
                 <span>Add Doctor</span>
@@ -1623,10 +1652,10 @@ export function AdminDashboard({
             {editingDoctor && (
               <form
                 onSubmit={handleSaveDoctor}
-                className="bg-white border border-sky-300 rounded-xl p-6 space-y-5"
+                className="surface-card border-sky-300 rounded-2xl p-6 space-y-5"
               >
-                <div className="flex items-center justify-between">
-                  <h3 className="font-display font-semibold text-base text-slate-950">
+                <div className="flex items-center justify-between border-b border-slate-200/80 pb-3.5">
+                  <h3 className="font-display font-bold text-base text-slate-950">
                     {isAddingDoctor ? 'Add New Doctor' : `Edit ${editingDoctor.name}`}
                   </h3>
                   <button
@@ -1635,14 +1664,14 @@ export function AdminDashboard({
                       setEditingDoctor(null);
                       setIsAddingDoctor(false);
                     }}
-                    className="text-slate-500 hover:text-slate-800 cursor-pointer"
+                    className="p-1.5 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
                   >
                     <X className="w-5 h-5" />
                   </button>
                 </div>
 
                 {/* Doctor Portrait Upload Control */}
-                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center gap-4">
                   <div className="w-24 h-24 rounded-xl overflow-hidden border border-slate-300 bg-white flex items-center justify-center shrink-0">
                     {editingDoctor.photoUrl ? (
                       <img
@@ -1655,7 +1684,7 @@ export function AdminDashboard({
                     )}
                   </div>
                   <div className="space-y-2 flex-1">
-                    <div className="text-xs font-semibold text-slate-900">
+                    <div className="text-xs font-bold text-slate-900">
                       Doctor Profile Photo (Auto-cropped &amp; optimized)
                     </div>
                     <p className="text-xs text-slate-500">
@@ -1663,7 +1692,7 @@ export function AdminDashboard({
                       clean clinical placeholder.
                     </p>
                     <div className="flex flex-wrap items-center gap-2.5">
-                      <label className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#0F4C81] text-white text-xs font-medium hover:bg-[#0B3A63] cursor-pointer">
+                      <label className="inline-flex items-center gap-1.5 min-h-[38px] px-3.5 py-2 rounded-xl bg-[#0F4C81] text-white text-xs font-semibold hover:bg-[#0A365C] transition-colors cursor-pointer">
                         <ImagePlus className="w-3.5 h-3.5" aria-hidden="true" />
                         <span>{uploadingPhoto ? 'Processing...' : 'Upload Photo'}</span>
                         <input
@@ -1677,7 +1706,7 @@ export function AdminDashboard({
                         <button
                           type="button"
                           onClick={() => setEditingDoctor({ ...editingDoctor, photoUrl: '' })}
-                          className="px-3 py-2 rounded-lg border border-slate-300 bg-white text-xs font-medium text-rose-700 hover:bg-rose-50 cursor-pointer"
+                          className="min-h-[38px] px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs font-semibold text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer"
                         >
                           Remove Photo
                         </button>
@@ -1688,7 +1717,7 @@ export function AdminDashboard({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                       Doctor Name *
                     </label>
                     <input
@@ -1699,12 +1728,12 @@ export function AdminDashboard({
                       onChange={(e) =>
                         setEditingDoctor({ ...editingDoctor, name: e.target.value })
                       }
-                      className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"
+                      className="clinical-input px-3.5 py-2 text-sm min-h-[42px]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                       Specialization
                     </label>
                     <input
@@ -1715,12 +1744,12 @@ export function AdminDashboard({
                         setEditingDoctor({ ...editingDoctor, specialty: e.target.value })
                       }
                       placeholder="e.g. Consultant Physician"
-                      className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"
+                      className="clinical-input px-3.5 py-2 text-sm min-h-[42px]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                       OPD Fee (NPR, 0 = Confirm at Desk)
                     </label>
                     <input
@@ -1735,12 +1764,12 @@ export function AdminDashboard({
                           opdFee: Number(e.target.value),
                         })
                       }
-                      className="w-full px-3 py-2 text-sm font-mono tabular-nums border border-slate-300 rounded-lg"
+                      className="clinical-input px-3.5 py-2 text-sm font-mono tabular-nums min-h-[42px]"
                     />
                   </div>
 
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                       Qualification (Optional)
                     </label>
                     <input
@@ -1751,12 +1780,12 @@ export function AdminDashboard({
                         setEditingDoctor({ ...editingDoctor, qualification: e.target.value })
                       }
                       placeholder="e.g. MBBS, MD"
-                      className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"
+                      className="clinical-input px-3.5 py-2 text-sm min-h-[42px]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                       OPD Schedule (Optional)
                     </label>
                     <input
@@ -1767,12 +1796,12 @@ export function AdminDashboard({
                         setEditingDoctor({ ...editingDoctor, opdSchedule: e.target.value })
                       }
                       placeholder="Only when provided (e.g. Daily Service)"
-                      className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"
+                      className="clinical-input px-3.5 py-2 text-sm min-h-[42px]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                       NMC Reg. No. (Optional)
                     </label>
                     <input
@@ -1783,12 +1812,12 @@ export function AdminDashboard({
                         setEditingDoctor({ ...editingDoctor, nmcNo: e.target.value })
                       }
                       placeholder="e.g. 6802"
-                      className="w-full px-3 py-2 text-sm font-mono border border-slate-300 rounded-lg"
+                      className="clinical-input px-3.5 py-2 text-sm font-mono min-h-[42px]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                       Department *
                     </label>
                     <select
@@ -1796,7 +1825,7 @@ export function AdminDashboard({
                       onChange={(e) =>
                         setEditingDoctor({ ...editingDoctor, departmentId: e.target.value })
                       }
-                      className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white"
+                      className="clinical-input px-3 py-2 text-sm min-h-[42px]"
                     >
                       {departments.map((d) => (
                         <option key={d.id} value={d.id}>
@@ -1807,7 +1836,7 @@ export function AdminDashboard({
                   </div>
 
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                       Clinical Areas / Focus (Optional)
                     </label>
                     <input
@@ -1818,11 +1847,11 @@ export function AdminDashboard({
                         setEditingDoctor({ ...editingDoctor, clinicalFocus: e.target.value })
                       }
                       placeholder="Brief verified clinical focus shown in profile modal"
-                      className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"
+                      className="clinical-input px-3.5 py-2 text-sm min-h-[42px]"
                     />
                   </div>
 
-                  <div className="flex items-center gap-2 pt-5">
+                  <div className="flex items-center gap-2.5 pt-5">
                     <input
                       id="doc-available-toggle"
                       type="checkbox"
@@ -1845,9 +1874,9 @@ export function AdminDashboard({
                 </div>
 
                 {/* Time Slots Manager */}
-                <div className="space-y-2.5 pt-2 border-t border-slate-200">
+                <div className="space-y-3 pt-3 border-t border-slate-200/80">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-xs font-medium text-slate-700">
+                    <span className="text-xs font-semibold text-slate-700">
                       Manage OPD Time Slots ({editingDoctor.availableSlots.length}/16)
                     </span>
                     <div className="flex items-center gap-2">
@@ -1857,7 +1886,7 @@ export function AdminDashboard({
                         value={newSlotInput}
                         onChange={(e) => setNewSlotInput(e.target.value)}
                         placeholder="e.g. 04:30 PM"
-                        className="px-3 py-1.5 text-xs font-mono border border-slate-300 rounded-lg"
+                        className="clinical-input w-36 px-3 py-1.5 text-xs font-mono min-h-[36px]"
                       />
                       <button
                         type="button"
@@ -1875,7 +1904,7 @@ export function AdminDashboard({
                             setNewSlotInput('');
                           }
                         }}
-                        className="px-3 py-1.5 rounded-lg bg-slate-800 text-white text-xs font-medium hover:bg-slate-900 cursor-pointer"
+                        className="min-h-[36px] px-3.5 py-1.5 rounded-xl bg-slate-800 text-white text-xs font-semibold hover:bg-slate-900 transition-colors cursor-pointer"
                       >
                         Add Slot
                       </button>
@@ -1886,7 +1915,7 @@ export function AdminDashboard({
                     {editingDoctor.availableSlots.map((slot) => (
                       <span
                         key={slot}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-slate-300 bg-slate-50 text-xs font-mono tabular-nums text-slate-800"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-mono tabular-nums text-slate-800"
                       >
                         <Clock className="w-3 h-3 text-slate-500" aria-hidden="true" />
                         {slot}
@@ -1917,14 +1946,14 @@ export function AdminDashboard({
                       setEditingDoctor(null);
                       setIsAddingDoctor(false);
                     }}
-                    className="px-4 py-2 rounded-lg border border-slate-300 text-sm font-medium text-slate-700 cursor-pointer"
+                    className="min-h-[40px] px-4 py-2 rounded-xl border border-slate-300 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={savingDoctor || uploadingPhoto}
-                    className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-[#0F4C81] text-white text-sm font-medium hover:bg-[#0B3A63] cursor-pointer"
+                    className="inline-flex items-center gap-2 min-h-[40px] px-5 py-2 rounded-xl bg-[#0F4C81] text-white text-sm font-semibold hover:bg-[#0A365C] shadow-xs transition-colors cursor-pointer"
                   >
                     {savingDoctor ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -1937,14 +1966,14 @@ export function AdminDashboard({
               </form>
             )}
 
-            <div className="bg-white border border-slate-200 rounded-xl divide-y divide-slate-200">
+            <div className="surface-card rounded-2xl divide-y divide-slate-200/80 overflow-hidden">
               {doctors.map((doctor) => (
                 <div
                   key={doctor.id}
-                  className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                  className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/70 transition-colors"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 shrink-0 flex items-center justify-center">
+                    <div className="w-14 h-14 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 shrink-0 flex items-center justify-center">
                       {doctor.photoUrl ? (
                         <img
                           src={doctor.photoUrl}
@@ -1957,7 +1986,7 @@ export function AdminDashboard({
                     </div>
                     <div className="space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-display font-semibold text-slate-950">
+                        <span className="font-display font-bold text-slate-950">
                           {doctor.name}
                         </span>
                         <span className="text-xs text-slate-500">
@@ -1970,7 +1999,11 @@ export function AdminDashboard({
                         OPD Fee: {doctor.opdFee > 0 ? `NPR ${doctor.opdFee}` : 'Confirm at Desk'} ·{' '}
                         {doctor.availableSlots.length} Slots
                         {doctor.opdSchedule ? ` · ${doctor.opdSchedule}` : ''} ·{' '}
-                        <span className={doctor.isAvailable ? 'text-emerald-700' : 'text-rose-700'}>
+                        <span
+                          className={`font-semibold ${
+                            doctor.isAvailable ? 'text-emerald-700' : 'text-rose-700'
+                          }`}
+                        >
                           {doctor.isAvailable ? 'Available' : 'Paused'}
                         </span>
                       </div>
@@ -1984,7 +2017,7 @@ export function AdminDashboard({
                         setIsAddingDoctor(false);
                         setEditingDoctor(doctor);
                       }}
-                      className="px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-medium text-slate-800 hover:bg-slate-50 cursor-pointer"
+                      className="min-h-[36px] px-3.5 py-1.5 rounded-xl border border-slate-300 bg-white text-xs font-semibold text-slate-800 hover:bg-slate-50 transition-colors cursor-pointer"
                     >
                       Edit Photo, Fee &amp; Slots
                     </button>
@@ -1992,7 +2025,7 @@ export function AdminDashboard({
                       type="button"
                       onClick={() => handleDeleteDoctor(doctor)}
                       aria-label={`Remove ${doctor.name}`}
-                      className="p-1.5 rounded-lg border border-rose-200 text-rose-700 hover:bg-rose-50 cursor-pointer"
+                      className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-xl border border-rose-200 text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -2006,8 +2039,8 @@ export function AdminDashboard({
         {/* TAB 3: DEPARTMENTS */}
         {activeTab === 'departments' && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="font-display text-lg font-semibold text-slate-950">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="font-display text-lg font-bold text-slate-950">
                 Manage Hospital Departments
               </h2>
               <button
@@ -2025,7 +2058,7 @@ export function AdminDashboard({
                     sortOrder: departments.length + 1,
                   });
                 }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#0F4C81] text-white text-xs sm:text-sm font-medium hover:bg-[#0B3A63] cursor-pointer"
+                className="inline-flex items-center gap-1.5 min-h-[40px] px-4 py-2 rounded-xl bg-[#0F4C81] text-white text-xs sm:text-sm font-semibold hover:bg-[#0A365C] shadow-xs transition-colors cursor-pointer"
               >
                 <Plus className="w-4 h-4" aria-hidden="true" />
                 <span>Add Department</span>
@@ -2035,10 +2068,10 @@ export function AdminDashboard({
             {editingDept && (
               <form
                 onSubmit={handleSaveDept}
-                className="bg-white border border-sky-300 rounded-xl p-6 space-y-4"
+                className="surface-card border-sky-300 rounded-2xl p-6 space-y-4"
               >
-                <div className="flex items-center justify-between">
-                  <h3 className="font-display font-semibold text-base text-slate-950">
+                <div className="flex items-center justify-between border-b border-slate-200/80 pb-3.5">
+                  <h3 className="font-display font-bold text-base text-slate-950">
                     {isAddingDept ? 'Add Department' : `Edit ${editingDept.name}`}
                   </h3>
                   <button
@@ -2047,7 +2080,7 @@ export function AdminDashboard({
                       setEditingDept(null);
                       setIsAddingDept(false);
                     }}
-                    className="text-slate-500 cursor-pointer"
+                    className="p-1.5 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -2055,7 +2088,7 @@ export function AdminDashboard({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                       Department Name *
                     </label>
                     <input
@@ -2064,11 +2097,11 @@ export function AdminDashboard({
                       maxLength={100}
                       value={editingDept.name}
                       onChange={(e) => setEditingDept({ ...editingDept, name: e.target.value })}
-                      className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"
+                      className="clinical-input px-3.5 py-2 text-sm min-h-[42px]"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                       Nepali Subtitle (Optional)
                     </label>
                     <input
@@ -2078,11 +2111,11 @@ export function AdminDashboard({
                       onChange={(e) =>
                         setEditingDept({ ...editingDept, nepaliName: e.target.value })
                       }
-                      className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"
+                      className="clinical-input px-3.5 py-2 text-sm min-h-[42px]"
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                       Care Scope Line
                     </label>
                     <input
@@ -2093,11 +2126,11 @@ export function AdminDashboard({
                         setEditingDept({ ...editingDept, careScope: e.target.value })
                       }
                       placeholder="e.g. Inpatient Care · Diagnostics"
-                      className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"
+                      className="clinical-input px-3.5 py-2 text-sm min-h-[42px]"
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                       Summary *
                     </label>
                     <textarea
@@ -2108,13 +2141,13 @@ export function AdminDashboard({
                       onChange={(e) =>
                         setEditingDept({ ...editingDept, summary: e.target.value })
                       }
-                      className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"
+                      className="clinical-input px-3.5 py-2.5 text-sm"
                     />
                   </div>
                 </div>
 
                 <div className="flex flex-wrap gap-6">
-                  <label className="inline-flex items-center gap-2 text-sm text-slate-800">
+                  <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-800">
                     <input
                       type="checkbox"
                       checked={editingDept.is24x7}
@@ -2126,7 +2159,7 @@ export function AdminDashboard({
                     24/7 Service
                   </label>
 
-                  <label className="inline-flex items-center gap-2 text-sm text-slate-800">
+                  <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-800">
                     <input
                       type="checkbox"
                       checked={editingDept.isActive}
@@ -2139,21 +2172,21 @@ export function AdminDashboard({
                   </label>
                 </div>
 
-                <div className="flex justify-end gap-3">
+                <div className="flex justify-end gap-3 pt-2">
                   <button
                     type="button"
                     onClick={() => {
                       setEditingDept(null);
                       setIsAddingDept(false);
                     }}
-                    className="px-4 py-2 rounded-lg border border-slate-300 text-sm text-slate-700 cursor-pointer"
+                    className="min-h-[40px] px-4 py-2 rounded-xl border border-slate-300 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={savingDept}
-                    className="px-5 py-2 rounded-lg bg-[#0F4C81] text-white text-sm font-medium hover:bg-[#0B3A63] cursor-pointer"
+                    className="min-h-[40px] px-5 py-2 rounded-xl bg-[#0F4C81] text-white text-sm font-semibold hover:bg-[#0A365C] shadow-xs transition-colors cursor-pointer"
                   >
                     {savingDept ? 'Saving...' : 'Save Department'}
                   </button>
@@ -2161,25 +2194,27 @@ export function AdminDashboard({
               </form>
             )}
 
-            <div className="bg-white border border-slate-200 rounded-xl divide-y divide-slate-200">
+            <div className="surface-card rounded-2xl divide-y divide-slate-200/80 overflow-hidden">
               {departments.map((dept) => (
                 <div
                   key={dept.id}
-                  className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                  className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/70 transition-colors"
                 >
                   <div className="space-y-1">
-                    <div className="font-display font-semibold text-slate-950">
+                    <div className="font-display font-bold text-slate-950">
                       {dept.name}
                       {dept.nepaliName ? (
-                        <span className="text-xs font-normal text-[#0F4C81] ml-2">
+                        <span className="text-xs font-semibold text-[#0F4C81] ml-2">
                           ({dept.nepaliName})
                         </span>
                       ) : null}
                     </div>
                     <p className="text-xs text-slate-600">{dept.summary}</p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs font-medium text-slate-500">
                       {dept.is24x7 ? 'OPD & Surgical/Inpatient' : 'OPD Service'} ·{' '}
-                      {dept.isActive ? 'Active' : 'Inactive'}
+                      <span className={dept.isActive ? 'text-emerald-700' : 'text-slate-500'}>
+                        {dept.isActive ? 'Active' : 'Inactive'}
+                      </span>
                     </p>
                   </div>
 
@@ -2190,7 +2225,7 @@ export function AdminDashboard({
                         setIsAddingDept(false);
                         setEditingDept(dept);
                       }}
-                      className="px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-medium text-slate-800 hover:bg-slate-50 cursor-pointer"
+                      className="min-h-[36px] px-3.5 py-1.5 rounded-xl border border-slate-300 bg-white text-xs font-semibold text-slate-800 hover:bg-slate-50 transition-colors cursor-pointer"
                     >
                       Edit
                     </button>
@@ -2198,7 +2233,7 @@ export function AdminDashboard({
                       type="button"
                       onClick={() => handleDeleteDept(dept)}
                       aria-label={`Remove ${dept.name}`}
-                      className="p-1.5 rounded-lg border border-rose-200 text-rose-700 hover:bg-rose-50 cursor-pointer"
+                      className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-xl border border-rose-200 text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -2211,9 +2246,9 @@ export function AdminDashboard({
 
         {/* TAB 4: PATIENT FEEDBACK MODERATION */}
         {activeTab === 'feedback' && (
-          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-            <div className="p-4 sm:p-5 border-b border-slate-200">
-              <h2 className="font-display text-lg font-semibold text-slate-950">
+          <div className="surface-card rounded-2xl overflow-hidden">
+            <div className="p-5 sm:p-6 border-b border-slate-200/80 bg-slate-50/50">
+              <h2 className="font-display text-lg font-bold text-slate-950">
                 Patient Feedback Moderation
               </h2>
               <p className="text-xs text-slate-600 mt-0.5">
@@ -2226,18 +2261,18 @@ export function AdminDashboard({
                 No patient feedback entries have been submitted yet.
               </div>
             ) : (
-              <div className="divide-y divide-slate-200">
+              <div className="divide-y divide-slate-200/80">
                 {feedbackItems.map((item) => (
                   <div
                     key={item.id}
-                    className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                    className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/70 transition-colors"
                   >
                     <div className="space-y-1.5">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-display font-semibold text-slate-950 text-sm">
+                        <span className="font-display font-bold text-slate-950 text-sm">
                           {item.patientName}
                         </span>
-                        <span className="inline-flex items-center gap-1 text-xs font-mono text-amber-700">
+                        <span className="inline-flex items-center gap-1 text-xs font-mono font-semibold text-amber-700">
                           <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
                           {item.rating}/5
                         </span>
@@ -2246,7 +2281,7 @@ export function AdminDashboard({
                           {item.doctorName ? ` · ${item.doctorName}` : ''}
                         </span>
                       </div>
-                      <p className="text-sm text-slate-700">{item.comment}</p>
+                      <p className="text-sm text-slate-700 leading-relaxed">{item.comment}</p>
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
@@ -2267,7 +2302,7 @@ export function AdminDashboard({
                             );
                           }
                         }}
-                        className={`px-3 py-1.5 rounded-lg border text-xs font-medium cursor-pointer ${
+                        className={`min-h-[36px] px-3.5 py-1.5 rounded-xl border text-xs font-semibold transition-colors cursor-pointer ${
                           item.isPublished
                             ? 'border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
                             : 'border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100'
@@ -2290,7 +2325,7 @@ export function AdminDashboard({
                           }
                         }}
                         aria-label={`Delete feedback by ${item.patientName}`}
-                        className="p-1.5 rounded-lg border border-rose-200 text-rose-700 hover:bg-rose-50 cursor-pointer"
+                        className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-xl border border-rose-200 text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -2304,9 +2339,9 @@ export function AdminDashboard({
 
         {/* TAB 5: ADMIN ACCESS */}
         {activeTab === 'access' && (
-          <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-5 max-w-xl">
+          <div className="surface-card rounded-2xl p-6 sm:p-7 space-y-5 max-w-xl">
             <div className="space-y-1">
-              <h2 className="font-display text-lg font-semibold text-slate-950">
+              <h2 className="font-display text-lg font-bold text-slate-950">
                 Authorize Additional Hospital Administrator
               </h2>
               <p className="text-xs text-slate-600 leading-relaxed">
@@ -2317,7 +2352,7 @@ export function AdminDashboard({
 
             <form onSubmit={handleAddAdmin} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                   Firebase User UID *
                 </label>
                 <input
@@ -2326,12 +2361,12 @@ export function AdminDashboard({
                   value={newAdminUid}
                   onChange={(e) => setNewAdminUid(e.target.value)}
                   placeholder="Paste user UID"
-                  className="w-full px-3 py-2 text-sm font-mono border border-slate-300 rounded-lg"
+                  className="clinical-input px-3.5 py-2.5 text-sm font-mono min-h-[42px]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                   Staff Google Email *
                 </label>
                 <input
@@ -2340,14 +2375,14 @@ export function AdminDashboard({
                   value={newAdminEmail}
                   onChange={(e) => setNewAdminEmail(e.target.value)}
                   placeholder="staff@example.com"
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"
+                  className="clinical-input px-3.5 py-2.5 text-sm min-h-[42px]"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={savingAdmin}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#0F4C81] text-white text-sm font-medium hover:bg-[#0B3A63] cursor-pointer"
+                className="inline-flex items-center gap-2 min-h-[44px] px-5 py-2.5 rounded-xl bg-[#0F4C81] text-white text-sm font-semibold hover:bg-[#0A365C] shadow-xs transition-colors cursor-pointer"
               >
                 {savingAdmin ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -2358,54 +2393,66 @@ export function AdminDashboard({
               </button>
             </form>
 
-            <div className="pt-4 border-t border-slate-200 text-xs text-slate-500 flex items-center gap-2">
+            <div className="pt-4 border-t border-slate-200/80 text-xs text-slate-600 flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" aria-hidden="true" />
-              <span>Current Admin UID: {user.uid}</span>
+              <span className="font-mono break-all">Current Admin UID: {user.uid}</span>
             </div>
           </div>
         )}
       </div>
 
       {/* Payment Screenshot Lightbox Modal */}
-      {previewScreenshotPayment && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 bg-slate-950/70 flex items-center justify-center p-4"
-        >
-          <div className="bg-white rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto border border-slate-200 p-5 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-              <div>
-                <p className="text-xs text-slate-500">
-                  {previewScreenshotPayment.patientName} · NPR{' '}
-                  {previewScreenshotPayment.amount.toLocaleString()}
-                </p>
-                <h3 className="font-mono text-sm font-bold text-[#0F4C81]">
-                  {previewScreenshotPayment.paymentRef} · Tx: {previewScreenshotPayment.transactionId}
-                </h3>
+      <AnimatePresence>
+        {previewScreenshotPayment && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.16 }}
+            role="dialog"
+            aria-modal="true"
+            className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.97, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: 8 }}
+              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+              className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto border border-slate-200 shadow-2xl p-6 space-y-4"
+            >
+              <div className="flex items-center justify-between border-b border-slate-200/80 pb-3.5">
+                <div>
+                  <p className="text-xs font-medium text-slate-500">
+                    {previewScreenshotPayment.patientName} · NPR{' '}
+                    {previewScreenshotPayment.amount.toLocaleString()}
+                  </p>
+                  <h3 className="font-mono text-sm font-bold text-[#0F4C81] mt-0.5">
+                    {previewScreenshotPayment.paymentRef} · Tx: {previewScreenshotPayment.transactionId}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPreviewScreenshotPayment(null)}
+                  aria-label="Close screenshot preview"
+                  className="p-2 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setPreviewScreenshotPayment(null)}
-                aria-label="Close screenshot preview"
-                className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-2 flex justify-center">
-              <img
-                src={
-                  previewScreenshotPayment.screenshotUrl ||
-                  previewScreenshotPayment.screenshotDataUrl
-                }
-                alt={`Payment screenshot for ${previewScreenshotPayment.paymentRef}`}
-                className="max-h-[65vh] w-auto rounded object-contain"
-              />
-            </div>
-          </div>
-        </div>
-      )}
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-2.5 flex justify-center">
+                <img
+                  src={
+                    previewScreenshotPayment.screenshotUrl ||
+                    previewScreenshotPayment.screenshotDataUrl
+                  }
+                  alt={`Payment screenshot for ${previewScreenshotPayment.paymentRef}`}
+                  className="max-h-[65vh] w-auto rounded-lg object-contain"
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }
